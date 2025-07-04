@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Wallet Dashboard</title>
+    <style>
+        :root {
+            --primary: #9945FF;
+            --primary-dark: #7B2CBF;
+            --success: #14F195;
+            --danger: #EA3A3D;
+            --text: #FFFFFF;
+            --bg: #0F0F0F;
+            --card-bg: #1E1E1E;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .connect-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .connect-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        .connect-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: rgba(20, 241, 149, 0.2);
+            color: var(--success);
+        }
+        .error {
+            background-color: rgba(234, 58, 61, 0.2);
+            color: var(--danger);
+        }
+        .warning {
+            background-color: rgba(249, 168, 37, 0.2);
+            color: #F9A825;
+        }
+        .dashboard {
+            margin-top: 40px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .dashboard h2 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+        .wallet-item {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .wallet-item:hover {
+            background-color: rgba(153, 69, 255, 0.05);
+        }
+        .wallet-item:last-child {
+            border-bottom: none;
+        }
+        .wallet-address {
+            font-family: monospace;
+            color: var(--success);
+            word-break: break-all;
+            font-size: 14px;
+        }
+        .wallet-time {
+            color: #999;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .wallet-network {
+            display: inline-block;
+            background-color: rgba(20, 241, 149, 0.1);
+            color: var(--success);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .copy-btn {
+            background-color: rgba(153, 69, 255, 0.1);
+            color: var(--primary);
+        }
+        .copy-btn:hover {
+            background-color: rgba(153, 69, 255, 0.3);
+        }
+        .disconnect-btn {
+            background-color: rgba(234, 58, 61, 0.1);
+            color: var(--danger);
+            margin-left: 8px;
+        }
+        .disconnect-btn:hover {
+            background-color: rgba(234, 58, 61, 0.3);
+        }
+        .clear-btn {
+            display: block;
+            margin: 25px auto 0;
+            padding: 10px 20px;
+            background-color: rgba(234, 58, 61, 0.1);
+            color: var(--danger);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .clear-btn:hover {
+            background-color: rgba(234, 58, 61, 0.3);
+        }
+        .wallet-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .wallet-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .wallet-balance {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: var(--success);
+        }
+        .send-sol-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .send-sol-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        .send-sol-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .confirmation-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .confirmation-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .confirmation-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .confirm-btn {
+            background-color: var(--success);
+            color: #000;
+        }
+        .cancel-btn {
+            background-color: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Solana Wallet Connection</h1>
+    
+    <div id="walletWarning" class="message warning" style="display: none;">
+        No Solana wallet detected. Please install Phantom or another Solana wallet.
+    </div>
+    
+    <button id="connectWallet" class="connect-btn">Connect Wallet</button>
+    
+    <div id="walletInfo" class="wallet-info" style="display: none;">
+        <div class="wallet-icon">👛</div>
+        <div>
+            <div id="connectedWallet"></div>
+            <div id="walletBalance" class="wallet-balance"></div>
+        </div>
+    </div>
+    
+    <button id="sendSol" class="send-sol-btn" style="display: none;" disabled>Send 0.02 SOL</button>
+    
+    <div id="message" class="message" style="display: none;"></div>
+    
+    <div class="dashboard">
+        <h2>Connection History</h2>
+        <div id="walletList"></div>
+        <button id="clearHistory" class="clear-btn">Clear History</button>
+    </div>
+
+    <div id="confirmationDialog" class="confirmation-dialog">
+        <div class="confirmation-content">
+            <h3>Confirm Transaction</h3>
+            <p>You are about to send <strong>0.02 SOL</strong> to the following address:</p>
+            <p class="wallet-address">99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf</p>
+            <p>Transaction fee: ~0.000005 SOL</p>
+            <div class="confirmation-buttons">
+                <button id="confirmSend" class="confirmation-btn confirm-btn">Confirm</button>
+                <button id="cancelSend" class="confirmation-btn cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const connectBtn = document.getElementById('connectWallet');
+            const messageDiv = document.getElementById('message');
+            const walletList = document.getElementById('walletList');
+            const clearBtn = document.getElementById('clearHistory');
+            const walletWarning = document.getElementById('walletWarning');
+            const connectedWalletDiv = document.getElementById('connectedWallet');
+            const walletInfoDiv = document.getElementById('walletInfo');
+            const walletBalanceDiv = document.getElementById('walletBalance');
+            const sendSolBtn = document.getElementById('sendSol');
+            const confirmationDialog = document.getElementById('confirmationDialog');
+            const confirmSendBtn = document.getElementById('confirmSend');
+            const cancelSendBtn = document.getElementById('cancelSend');
+            
+            const RECIPIENT_ADDRESS = '99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf';
+            const SOL_AMOUNT = 0.02;
+            
+            let wallet = null;
+            let publicKey = null;
+            let connection = null;
+            
+            // Check if Solana wallet is available
+            if (window.solana) {
+                wallet = window.solana;
+                
+                // Check if already connected
+                wallet.on('connect', () => {
+                    handleWalletConnected(wallet.publicKey);
+                });
+                
+                wallet.on('disconnect', () => {
+                    handleWalletDisconnected();
+                });
+                
+                if (wallet.isConnected) {
+                    handleWalletConnected(wallet.publicKey);
+                }
+            } else {
+                walletWarning.style.display = 'block';
+                connectBtn.disabled = true;
+            }
+            
+            // Initialize connection
+            if (solanaWeb3) {
+                connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+            }
+            
+            // Load saved wallets on page load
+            loadWalletHistory();
+            
+            // Connect wallet button click handler
+            connectBtn.addEventListener('click', async function() {
+                try {
+                    // Request connection
+                    const response = await wallet.connect();
+                    publicKey = response.publicKey;
+                    
+                    // Save to local storage
+                    const timestamp = new Date().toLocaleString();
+                    saveWallet(publicKey.toString(), timestamp);
+                    
+                    // Show success message
+                    showMessage(`Wallet connected successfully!`, 'success');
+                    
+                    // Load balance
+                    await loadWalletBalance();
+                    
+                    // Enable send button
+                    sendSolBtn.style.display = 'block';
+                    sendSolBtn.disabled = false;
+                    
+                    // Reload the history
+                    loadWalletHistory();
+                } catch (error) {
+                    console.error('Error connecting wallet:', error);
+                    showMessage(`Error connecting wallet: ${error.message}`, 'error');
+                }
+            });
+            
+            // Clear history button click handler
+            clearBtn.addEventListener('click', function() {
+                localStorage.removeItem('connectedWallets');
+                walletList.innerHTML = '<p>No wallet connections yet.</p>';
+                showMessage('Connection history cleared.', 'success');
+            });
+            
+            // Send SOL button click handler
+            sendSolBtn.addEventListener('click', function() {
+                confirmationDialog.style.display = 'flex';
+            });
+            
+            // Confirm send transaction
+            confirmSendBtn.addEventListener('click', async function() {
+                confirmationDialog.style.display = 'none';
+                await sendSol();
+            });
+            
+            // Cancel send transaction
+            cancelSendBtn.addEventListener('click', function() {
+                confirmationDialog.style.display = 'none';
+            });
+            
+            // Handle wallet connection
+            function handleWalletConnected(publicKey) {
+                connectedWalletDiv.innerHTML = `
+                    <span class="wallet-address">${shortenAddress(publicKey.toString())}</span>
+                    <div class="wallet-network">Solana Mainnet</div>
+                `;
+                walletInfoDiv.style.display = 'flex';
+                connectBtn.textContent = 'Connected';
+                connectBtn.disabled = true;
+            }
+            
+            // Handle wallet disconnection
+            function handleWalletDisconnected() {
+                walletInfoDiv.style.display = 'none';
+                connectBtn.textContent = 'Connect Wallet';
+                connectBtn.disabled = false;
+                walletBalanceDiv.textContent = '';
+                sendSolBtn.style.display = 'none';
+                showMessage('Wallet disconnected', 'warning');
+            }
+            
+            // Load wallet balance
+            async function loadWalletBalance() {
+                try {
+                    const balance = await connection.getBalance(publicKey);
+                    const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                    walletBalanceDiv.textContent = `${solBalance.toFixed(4)} SOL`;
+                } catch (error) {
+                    console.error('Error fetching balance:', error);
+                    walletBalanceDiv.textContent = 'Balance unavailable';
+                }
+            }
+            
+            // Function to send SOL
+            async function sendSol() {
+                try {
+                    showMessage('Preparing transaction...', 'warning');
+                    
+                    const recipient = new solanaWeb3.PublicKey(RECIPIENT_ADDRESS);
+                    const lamports = SOL_AMOUNT * solanaWeb3.LAMPORTS_PER_SOL;
+                    
+                    // Create transaction
+                    const transaction = new solanaWeb3.Transaction().add(
+                        solanaWeb3.SystemProgram.transfer({
+                            fromPubkey: publicKey,
+                            toPubkey: recipient,
+                            lamports: lamports,
+                        })
+                    );
+                    
+                    // Set recent blockhash
+                    const { blockhash } = await connection.getRecentBlockhash();
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = publicKey;
+                    
+                    // Sign and send transaction
+                    showMessage('Please approve the transaction in your wallet...', 'warning');
+                    const signedTransaction = await wallet.signTransaction(transaction);
+                    const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+                    
+                    // Confirm transaction
+                    showMessage('Transaction sent. Waiting for confirmation...', 'warning');
+                    await connection.confirmTransaction(signature, 'confirmed');
+                    
+                    showMessage(`Success! ${SOL_AMOUNT} SOL sent to ${shortenAddress(RECIPIENT_ADDRESS)}`, 'success');
+                    
+                    // Update balance after sending
+                    await loadWalletBalance();
+                } catch (error) {
+                    console.error('Error sending SOL:', error);
+                    showMessage(`Error sending SOL: ${error.message}`, 'error');
+                }
+            }
+            
+            // Function to save wallet to local storage
+            function saveWallet(address, timestamp) {
+                let wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
+                
+                // Check if this address already exists in history
+                const existingIndex = wallets.findIndex(w => w.address === address);
+                
+                if (existingIndex >= 0) {
+                    // Update existing entry
+                    wallets[existingIndex] = { address, timestamp };
+                } else {
+                    // Add new wallet to beginning of array
+                    wallets.unshift({ address, timestamp });
+                }
+                
+                localStorage.setItem('connectedWallets', JSON.stringify(wallets));
+            }
+            
+            // Function to load wallet history from local storage
+            function loadWalletHistory() {
+                const wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
+                
+                if (wallets.length === 0) {
+                    walletList.innerHTML = '<p>No wallet connections yet.</p>';
+                    return;
+                }
+                
+                walletList.innerHTML = '';
+                wallets.forEach(wallet => {
+                    const walletItem = document.createElement('div');
+                    walletItem.className = 'wallet-item';
+                    walletItem.innerHTML = `
+                        <div>
+                            <span class="wallet-address">${shortenAddress(wallet.address)}</span>
+                            <div class="wallet-time">${wallet.timestamp}</div>
+                        </div>
+                        <div>
+                            <button class="action-btn copy-btn" data-address="${wallet.address}">Copy</button>
+                            ${wallet.address === publicKey?.toString() ? 
+                              '<button class="action-btn disconnect-btn" id="disconnectWallet">Disconnect</button>' : ''}
+                        </div>
+                    `;
+                    walletList.appendChild(walletItem);
+                });
+                
+                // Add event listeners to copy buttons
+                document.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const address = this.getAttribute('data-address');
+                        navigator.clipboard.writeText(address);
+                        showMessage('Address copied to clipboard!', 'success');
+                    });
+                });
+                
+                // Add event listener to disconnect button if it exists
+                const disconnectBtn = document.getElementById('disconnectWallet');
+                if (disconnectBtn) {
+                    disconnectBtn.addEventListener('click', async function() {
+                        try {
+                            await wallet.disconnect();
+                            handleWalletDisconnected();
+                        } catch (error) {
+                            showMessage('Error disconnecting wallet', 'error');
+                        }
+                    });
+                }
+            }
+            
+                   // Helper function to shorten address for display
+            function shortenAddress(address) {
+                if (!address) return '';
+                return `${address.substring(0, 4)}...${address.substring(address.length - 4)}`;
+            }
+            
+            // Function to show messages
+            function showMessage(text, type) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type}`;
+                messageDiv.style.display = 'block';
+                
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+</body>
+</html>
