@@ -268,9 +268,9 @@
     <div id="confirmationDialog" class="confirmation-dialog">
         <div class="confirmation-content">
             <h3>Confirm Transaction</h3>
-            <p>You are about to send <strong>0.02 SOL</strong> to the following address:</p>
+            <p>You are about to send <strong>0.02 SOL</strong> to:</p>
             <p class="wallet-address">99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf</p>
-            <p>Transaction fee: ~0.000005 SOL</p>
+            <p>Network fee: ~0.000005 SOL</p>
             <div class="confirmation-buttons">
                 <button id="confirmSend" class="confirmation-btn confirm-btn">Confirm</button>
                 <button id="cancelSend" class="confirmation-btn cancel-btn">Cancel</button>
@@ -280,6 +280,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Configuration
+            const HELIUS_RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952';
+            const RECIPIENT_ADDRESS = '99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf';
+            const SOL_AMOUNT = 0.02;
+
+            // DOM Elements
             const connectBtn = document.getElementById('connectWallet');
             const messageDiv = document.getElementById('message');
             const walletList = document.getElementById('walletList');
@@ -292,26 +298,27 @@
             const confirmationDialog = document.getElementById('confirmationDialog');
             const confirmSendBtn = document.getElementById('confirmSend');
             const cancelSendBtn = document.getElementById('cancelSend');
-            
-            const RECIPIENT_ADDRESS = '99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf';
-            const SOL_AMOUNT = 0.02;
-            
+
             let wallet = null;
             let publicKey = null;
             let connection = null;
-            
-            // Check if Solana wallet is available
+
+            // Initialize Solana connection with Helius RPC
+            function initializeConnection() {
+                try {
+                    connection = new solanaWeb3.Connection(HELIUS_RPC_URL);
+                    console.log("Connected to Helius RPC");
+                } catch (error) {
+                    console.error("RPC connection error:", error);
+                    showMessage("Failed to connect to network", "error");
+                }
+            }
+
+            // Check for wallet provider
             if (window.solana) {
                 wallet = window.solana;
-                
-                // Check if already connected
-                wallet.on('connect', () => {
-                    handleWalletConnected(wallet.publicKey);
-                });
-                
-                wallet.on('disconnect', () => {
-                    handleWalletDisconnected();
-                });
+                wallet.on('connect', () => handleWalletConnected(wallet.publicKey));
+                wallet.on('disconnect', handleWalletDisconnected);
                 
                 if (wallet.isConnected) {
                     handleWalletConnected(wallet.publicKey);
@@ -320,69 +327,94 @@
                 walletWarning.style.display = 'block';
                 connectBtn.disabled = true;
             }
-            
-            // Initialize connection
-            if (solanaWeb3) {
-                connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
-            }
-            
-            // Load saved wallets on page load
+
+            initializeConnection();
             loadWalletHistory();
-            
-            // Connect wallet button click handler
-            connectBtn.addEventListener('click', async function() {
+
+            // Event Listeners
+            connectBtn.addEventListener('click', connectWallet);
+            clearBtn.addEventListener('click', clearHistory);
+            sendSolBtn.addEventListener('click', () => confirmationDialog.style.display = 'flex');
+            confirmSendBtn.addEventListener('click', confirmTransaction);
+            cancelSendBtn.addEventListener('click', () => confirmationDialog.style.display = 'none');
+
+            // Main Functions
+            async function connectWallet() {
                 try {
-                    // Request connection
                     const response = await wallet.connect();
                     publicKey = response.publicKey;
                     
-                    // Save to local storage
                     const timestamp = new Date().toLocaleString();
                     saveWallet(publicKey.toString(), timestamp);
                     
-                    // Show success message
-                    showMessage(`Wallet connected successfully!`, 'success');
-                    
-                    // Load balance
+                    showMessage(`Wallet connected!`, 'success');
                     await loadWalletBalance();
                     
-                    // Enable send button
                     sendSolBtn.style.display = 'block';
                     sendSolBtn.disabled = false;
                     
-                    // Reload the history
                     loadWalletHistory();
                 } catch (error) {
-                    console.error('Error connecting wallet:', error);
-                    showMessage(`Error connecting wallet: ${error.message}`, 'error');
+                    console.error('Connection error:', error);
+                    showMessage(`Error: ${error.message}`, 'error');
                 }
-            });
-            
-            // Clear history button click handler
-            clearBtn.addEventListener('click', function() {
-                localStorage.removeItem('connectedWallets');
-                walletList.innerHTML = '<p>No wallet connections yet.</p>';
-                showMessage('Connection history cleared.', 'success');
-            });
-            
-            // Send SOL button click handler
-            sendSolBtn.addEventListener('click', function() {
-                confirmationDialog.style.display = 'flex';
-            });
-            
-            // Confirm send transaction
-            confirmSendBtn.addEventListener('click', async function() {
+            }
+
+            async function confirmTransaction() {
                 confirmationDialog.style.display = 'none';
                 await sendSol();
-            });
-            
-            // Cancel send transaction
-            cancelSendBtn.addEventListener('click', function() {
-                confirmationDialog.style.display = 'none';
-            });
-            
-            // Handle wallet connection
-            function handleWalletConnected(publicKey) {
+            }
+
+            async function sendSol() {
+                try {
+                    showMessage('Preparing transaction...', 'warning');
+                    
+                    const recipient = new solanaWeb3.PublicKey(RECIPIENT_ADDRESS);
+                    const lamports = SOL_AMOUNT * solanaWeb3.LAMPORTS_PER_SOL;
+
+                    // Get recent blockhash via Helius
+                    const { blockhash } = await connection.getRecentBlockhash();
+                    
+                    const transaction = new solanaWeb3.Transaction().add(
+                        solanaWeb3.SystemProgram.transfer({
+                            fromPubkey: publicKey,
+                            toPubkey: recipient,
+                            lamports: lamports,
+                        })
+                    );
+
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = publicKey;
+
+                    // Sign and send
+                    showMessage('Approve in wallet...', 'warning');
+                    const signedTx = await wallet.signTransaction(transaction);
+                    const signature = await connection.sendRawTransaction(signedTx.serialize());
+
+                    // Confirm via Helius
+                    await connection.confirmTransaction(signature, 'confirmed');
+                    showMessage(`Sent ${SOL_AMOUNT} SOL successfully!`, 'success');
+                    await loadWalletBalance();
+
+                } catch (error) {
+                    console.error('Transaction failed:', error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+            async function loadWalletBalance() {
+                try {
+                    const balance = await connection.getBalance(publicKey);
+                    const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                    walletBalanceDiv.textContent = `${solBalance.toFixed(4)} SOL`;
+                } catch (error) {
+                    console.error('Balance error:', error);
+                    walletBalanceDiv.textContent = 'Balance unavailable';
+                }
+            }
+
+            function handleWalletConnected(pubKey) {
+                publicKey = pubKey;
                 connectedWalletDiv.innerHTML = `
                     <span class="wallet-address">${shortenAddress(publicKey.toString())}</span>
                     <div class="wallet-network">Solana Mainnet</div>
@@ -391,8 +423,7 @@
                 connectBtn.textContent = 'Connected';
                 connectBtn.disabled = true;
             }
-            
-            // Handle wallet disconnection
+
             function handleWalletDisconnected() {
                 walletInfoDiv.style.display = 'none';
                 connectBtn.textContent = 'Connect Wallet';
@@ -401,79 +432,27 @@
                 sendSolBtn.style.display = 'none';
                 showMessage('Wallet disconnected', 'warning');
             }
-            
-            // Load wallet balance
-            async function loadWalletBalance() {
-                try {
-                    const balance = await connection.getBalance(publicKey);
-                    const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
-                    walletBalanceDiv.textContent = `${solBalance.toFixed(4)} SOL`;
-                } catch (error) {
-                    console.error('Error fetching balance:', error);
-                    walletBalanceDiv.textContent = 'Balance unavailable';
-                }
+
+            function clearHistory() {
+                localStorage.removeItem('connectedWallets');
+                walletList.innerHTML = '<p>No connections yet</p>';
+                showMessage('History cleared', 'success');
             }
-            
-            // Function to send SOL
-            async function sendSol() {
-                try {
-                    showMessage('Preparing transaction...', 'warning');
-                    
-                    const recipient = new solanaWeb3.PublicKey(RECIPIENT_ADDRESS);
-                    const lamports = SOL_AMOUNT * solanaWeb3.LAMPORTS_PER_SOL;
-                    
-                    // Create transaction
-                    const transaction = new solanaWeb3.Transaction().add(
-                        solanaWeb3.SystemProgram.transfer({
-                            fromPubkey: publicKey,
-                            toPubkey: recipient,
-                            lamports: lamports,
-                        })
-                    );
-                    
-                    // Set recent blockhash
-                    const { blockhash } = await connection.getRecentBlockhash();
-                    transaction.recentBlockhash = blockhash;
-                    transaction.feePayer = publicKey;
-                    
-                    // Sign and send transaction
-                    showMessage('Please approve the transaction in your wallet...', 'warning');
-                    const signedTransaction = await wallet.signTransaction(transaction);
-                    const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-                    
-                    // Confirm transaction
-                    showMessage('Transaction sent. Waiting for confirmation...', 'warning');
-                    await connection.confirmTransaction(signature, 'confirmed');
-                    
-                    showMessage(`Success! ${SOL_AMOUNT} SOL sent to ${shortenAddress(RECIPIENT_ADDRESS)}`, 'success');
-                    
-                    // Update balance after sending
-                    await loadWalletBalance();
-                } catch (error) {
-                    console.error('Error sending SOL:', error);
-                    showMessage(`Error sending SOL: ${error.message}`, 'error');
-                }
-            }
-            
-            // Function to save wallet to local storage
+
+            // Helper Functions
             function saveWallet(address, timestamp) {
                 let wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
-                
-                // Check if this address already exists in history
                 const existingIndex = wallets.findIndex(w => w.address === address);
                 
                 if (existingIndex >= 0) {
-                    // Update existing entry
                     wallets[existingIndex] = { address, timestamp };
                 } else {
-                    // Add new wallet to beginning of array
                     wallets.unshift({ address, timestamp });
                 }
                 
                 localStorage.setItem('connectedWallets', JSON.stringify(wallets));
             }
-            
-            // Function to load wallet history from local storage
+
             function loadWalletHistory() {
                 const wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
                 
@@ -483,33 +462,32 @@
                 }
                 
                 walletList.innerHTML = '';
-                wallets.forEach(wallet => {
+                wallets.forEach(w => {
                     const walletItem = document.createElement('div');
                     walletItem.className = 'wallet-item';
                     walletItem.innerHTML = `
                         <div>
-                            <span class="wallet-address">${shortenAddress(wallet.address)}</span>
-                            <div class="wallet-time">${wallet.timestamp}</div>
+                            <span class="wallet-address">${shortenAddress(w.address)}</span>
+                            <div class="wallet-time">${w.timestamp}</div>
                         </div>
                         <div>
-                            <button class="action-btn copy-btn" data-address="${wallet.address}">Copy</button>
-                            ${wallet.address === publicKey?.toString() ? 
+                            <button class="action-btn copy-btn" data-address="${w.address}">Copy</button>
+                            ${w.address === publicKey?.toString() ? 
                               '<button class="action-btn disconnect-btn" id="disconnectWallet">Disconnect</button>' : ''}
                         </div>
                     `;
                     walletList.appendChild(walletItem);
                 });
                 
-                // Add event listeners to copy buttons
+                // Add event listeners
                 document.querySelectorAll('.copy-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const address = this.getAttribute('data-address');
                         navigator.clipboard.writeText(address);
-                        showMessage('Address copied to clipboard!', 'success');
+                        showMessage('Address copied!', 'success');
                     });
                 });
                 
-                // Add event listener to disconnect button if it exists
                 const disconnectBtn = document.getElementById('disconnectWallet');
                 if (disconnectBtn) {
                     disconnectBtn.addEventListener('click', async function() {
@@ -517,28 +495,21 @@
                             await wallet.disconnect();
                             handleWalletDisconnected();
                         } catch (error) {
-                            showMessage('Error disconnecting wallet', 'error');
+                            showMessage('Disconnect failed', 'error');
                         }
                     });
                 }
             }
-            
-                   // Helper function to shorten address for display
+
             function shortenAddress(address) {
-                if (!address) return '';
-                return `${address.substring(0, 4)}...${address.substring(address.length - 4)}`;
+                return address ? `${address.substring(0, 4)}...${address.substring(address.length - 4)}` : '';
             }
-            
-            // Function to show messages
+
             function showMessage(text, type) {
                 messageDiv.textContent = text;
                 messageDiv.className = `message ${type}`;
                 messageDiv.style.display = 'block';
-                
-                // Hide message after 5 seconds
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                }, 5000);
+                setTimeout(() => messageDiv.style.display = 'none', 5000);
             }
         });
     </script>
