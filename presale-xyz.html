@@ -374,22 +374,25 @@
     </style>
 </head>
 <body>
+    <div class="particles" id="particles"></div>
+    
     <div class="container">
         <header>
-            <div class="logo">XYZ PRESALE</div>
+            <div class="logo">XYZ INNOVAGENCE</div>
             <button class="connect-wallet" id="connectWallet">CONNECT WALLET</button>
             <div class="wallet-connected" id="walletConnected" style="display: none;">
+                <div class="wallet-icon"></div>
                 <div class="wallet-address" id="walletAddress"></div>
             </div>
         </header>
         
         <section class="hero">
-            <h1>TOKEN PRESALE</h1>
-            <p>Participate in our exclusive token presale. Secure your tokens before the public launch.</p>
+            <h1>PRESALE IS LIVE</h1>
+            <p>Join the future of decentralized innovation with XYZ Innovagence. Purchase tokens now at $0.01 each before the official launch.</p>
             
             <div class="presale-container">
                 <div class="presale-header">
-                    <div class="presale-title">PRESALE</div>
+                    <div class="presale-title">XYZ TOKEN PRESALE</div>
                     <div class="presale-stats">
                         <div class="stat-box">
                             <div class="stat-label">PRICE</div>
@@ -397,23 +400,23 @@
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">STAGE</div>
-                            <div class="stat-value">1/3</div>
+                            <div class="stat-value">1/5</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="presale-options">
+                    <div class="presale-option" data-amount="0.08">
+                        <div class="presale-option-amount">0.08 SOL</div>
+                        <div class="presale-option-label">≈ 800 XYZ</div>
+                    </div>
                     <div class="presale-option" data-amount="0.1">
                         <div class="presale-option-amount">0.1 SOL</div>
-                        <div class="presale-option-label">≈ 1000 TOKENS</div>
+                        <div class="presale-option-label">≈ 1000 XYZ</div>
                     </div>
                     <div class="presale-option" data-amount="0.5">
                         <div class="presale-option-amount">0.5 SOL</div>
-                        <div class="presale-option-label">≈ 5000 TOKENS</div>
-                    </div>
-                    <div class="presale-option" data-amount="1">
-                        <div class="presale-option-amount">1 SOL</div>
-                        <div class="presale-option-label">≈ 10000 TOKENS</div>
+                        <div class="presale-option-label">≈ 5000 XYZ</div>
                     </div>
                 </div>
                 
@@ -423,8 +426,8 @@
                         <div class="detail-value" id="contribution">0 SOL</div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Your Tokens</div>
-                        <div class="detail-value" id="xyzTokens">0 TOKENS</div>
+                        <div class="detail-label">Your XYZ Tokens</div>
+                        <div class="detail-value" id="xyzTokens">0 XYZ</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">Token Release</div>
@@ -433,14 +436,66 @@
                 </div>
                 
                 <button class="buy-button" id="buyButton" disabled>CONNECT WALLET TO PARTICIPATE</button>
-                <span class="view-history" id="viewHistory">View Transaction History</span>
+                <span class="view-history" id="viewHistory">View Deposit History</span>
             </div>
         </section>
     </div>
     
     <div class="notification" id="notification"></div>
 
-    <script>
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 class="modal-title">YOUR DEPOSIT HISTORY</h3>
+            <div class="deposit-history" id="depositHistory">
+                <div style="text-align: center; padding: 20px; color: var(--secondary);">Loading history...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wallet-selector" id="walletSelector">
+        <div class="wallet-selector-content">
+            <span class="close-wallet-selector" id="closeWalletSelector">&times;</span>
+            <h3 class="wallet-selector-title">CONNECT WALLET</h3>
+            <div class="wallet-options">
+                <div class="wallet-option" id="phantomOption">
+                    <div class="wallet-icon-large">
+                        <img src="https://phantom.app/favicon.ico" alt="Phantom">
+                    </div>
+                    <div class="wallet-name">Phantom</div>
+                </div>
+                <div class="wallet-option" id="okxOption">
+                    <div class="wallet-icon-large">
+                        <img src="https://www.okx.com/favicon.ico" alt="OKX">
+                    </div>
+                    <div class="wallet-name">OKX Wallet</div>
+                </div>
+                <div class="wallet-option" id="solflareOption">
+                    <div class="wallet-icon-large">
+                        <img src="https://solflare.com/favicon.ico" alt="Solflare">
+                    </div>
+                    <div class="wallet-name">Solflare</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
+            authDomain: "miner-zyx.firebaseapp.com",
+            projectId: "miner-zyx",
+            storageBucket: "miner-zyx.appspot.com",
+            messagingSenderId: "430019680448",
+            appId: "1:430019680448:web:d066b8aaf4355907e1b525",
+            measurementId: "G-V6SDWYH6M2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // DOM elements
         const connectWalletBtn = document.getElementById('connectWallet');
         const walletConnectedDiv = document.getElementById('walletConnected');
@@ -451,6 +506,14 @@
         const notification = document.getElementById('notification');
         const presaleOptions = document.querySelectorAll('.presale-option');
         const viewHistoryBtn = document.getElementById('viewHistory');
+        const historyModal = document.getElementById('historyModal');
+        const depositHistoryDiv = document.getElementById('depositHistory');
+        const closeModal = document.querySelector('.close-modal');
+        const walletSelector = document.getElementById('walletSelector');
+        const closeWalletSelector = document.getElementById('closeWalletSelector');
+        const phantomOption = document.getElementById('phantomOption');
+        const okxOption = document.getElementById('okxOption');
+        const solflareOption = document.getElementById('solflareOption');
 
         // App state
         let wallet = null;
@@ -458,81 +521,271 @@
         let selectedAmount = null;
         let connection = null;
         let isProcessing = false;
+        let originalButtonText = '';
+        let walletType = null;
 
         // Initialize Solana connection
         async function initSolana() {
             try {
-                connection = new solanaWeb3.Connection(
-                    'https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952', 
-                    'confirmed'
-                );
-
-                // Check if wallet is already connected
-                if (window.solana && window.solana.isConnected) {
-                    wallet = window.solana;
+                connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952', 'confirmed');
+                
+                // Check if wallet is already connected (Phantom auto-connect)
+                if (window.phantom?.solana?.isConnected) {
+                    wallet = window.phantom.solana;
+                    walletType = 'phantom';
                     walletAddress = wallet.publicKey.toString();
-                    updateUIForConnectedWallet();
+                    updateUIAfterConnection();
+                    await loadUserData(walletAddress);
                 }
             } catch (error) {
                 console.error('Error initializing Solana:', error);
-                showNotification('Failed to connect to network', 'error');
+                showNotification('Failed to connect to Solana network', 'error');
             }
+        }
+
+        // Update UI after wallet connection
+        function updateUIAfterConnection() {
+            walletConnectedDiv.style.display = 'flex';
+            connectWalletBtn.style.display = 'none';
+            walletAddressSpan.textContent = shortenAddress(walletAddress);
+            buyButton.textContent = 'SELECT AMOUNT TO BUY XYZ';
+            buyButton.disabled = false;
+        }
+
+        // Show wallet selector
+        function showWalletSelector() {
+            walletSelector.classList.add('show');
+        }
+
+        // Hide wallet selector
+        function hideWalletSelector() {
+            walletSelector.classList.remove('show');
         }
 
         // Connect wallet handler
         async function connectWallet() {
-            if (!window.solana) {
-                showNotification('Solana wallet not detected. Please install Phantom wallet.', 'error');
-                return;
-            }
-
-            try {
-                wallet = window.solana;
-                const response = await wallet.connect();
-                walletAddress = response.publicKey.toString();
-                updateUIForConnectedWallet();
-                showNotification('Wallet connected successfully!', 'success');
-            } catch (error) {
-                console.error('Error connecting wallet:', error);
-                showNotification('Failed to connect wallet', 'error');
-            }
+            showWalletSelector();
         }
 
-        // Update UI when wallet is connected
-        function updateUIForConnectedWallet() {
-            walletConnectedDiv.style.display = 'flex';
-            connectWalletBtn.style.display = 'none';
-            walletAddressSpan.textContent = shortenAddress(walletAddress);
-            buyButton.textContent = 'SELECT AMOUNT TO PARTICIPATE';
-            buyButton.disabled = false;
+        // Connect to specific wallet
+        async function connectToWallet(type) {
+            try {
+                walletType = type;
+                let provider;
+                
+                switch (type) {
+                    case 'phantom':
+                        provider = window.phantom?.solana;
+                        if (!provider) {
+                            window.open('https://phantom.app/', '_blank');
+                            throw new Error('Phantom wallet not installed');
+                        }
+                        break;
+                    case 'okx':
+                        provider = window.okxwallet?.solana;
+                        if (!provider) {
+                            window.open('https://www.okx.com/web3', '_blank');
+                            throw new Error('OKX wallet not installed');
+                        }
+                        break;
+                    case 'solflare':
+                        provider = window.solflare;
+                        if (!provider) {
+                            window.open('https://solflare.com/', '_blank');
+                            throw new Error('Solflare wallet not installed');
+                        }
+                        break;
+                    default:
+                        throw new Error('Unsupported wallet type');
+                }
+                
+                // Special handling for Phantom which has auto-connect
+                if (type === 'phantom' && provider.isConnected) {
+                    wallet = provider;
+                    walletAddress = provider.publicKey.toString();
+                } else {
+                    // Connect to wallet
+                    const response = await provider.connect();
+                    wallet = provider;
+                    walletAddress = response.publicKey.toString();
+                }
+                
+                // Update UI
+                updateUIAfterConnection();
+                
+                // Save wallet to Firestore
+                await saveWalletToFirestore(walletAddress, type);
+                
+                // Load user data
+                await loadUserData(walletAddress);
+                
+                hideWalletSelector();
+                showNotification('Wallet connected successfully!', 'success');
+                
+                // Set up disconnect listener for Phantom
+                if (type === 'phantom') {
+                    provider.on('disconnect', () => {
+                        disconnectWallet();
+                    });
+                }
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showNotification(error.message || 'Failed to connect wallet. Please try again.', 'error');
+                hideWalletSelector();
+            }
         }
 
         // Disconnect wallet
-        function disconnectWallet() {
-            wallet = null;
-            walletAddress = null;
-            walletConnectedDiv.style.display = 'none';
-            connectWalletBtn.style.display = 'block';
-            buyButton.textContent = 'CONNECT WALLET TO PARTICIPATE';
-            buyButton.disabled = true;
-            showNotification('Wallet disconnected', 'success');
+        async function disconnectWallet() {
+            try {
+                if (wallet && wallet.disconnect) {
+                    await wallet.disconnect();
+                }
+                
+                // Reset state
+                wallet = null;
+                walletAddress = null;
+                selectedAmount = null;
+                walletType = null;
+                
+                // Update UI
+                walletConnectedDiv.style.display = 'none';
+                connectWalletBtn.style.display = 'block';
+                buyButton.textContent = 'CONNECT WALLET TO PARTICIPATE';
+                buyButton.disabled = true;
+                contributionSpan.textContent = '0 SOL';
+                xyzTokensSpan.textContent = '0 XYZ';
+                
+                // Remove active class from options
+                presaleOptions.forEach(opt => opt.classList.remove('active'));
+                
+                showNotification('Wallet disconnected', 'success');
+            } catch (error) {
+                console.error('Error disconnecting wallet:', error);
+                showNotification('Failed to disconnect wallet', 'error');
+            }
         }
 
-        // Buy tokens
-        async function buyTokens(amount) {
+        // Save wallet to Firestore
+        async function saveWalletToFirestore(address, type) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const walletDoc = await walletRef.get();
+                
+                if (!walletDoc.exists) {
+                    await walletRef.set({
+                        walletType: type,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        totalSolDeposits: 0,
+                        totalXyzBalance: 0,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    // Update wallet type if it changed
+                    await walletRef.update({
+                        walletType: type,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                console.error('Error saving wallet to Firestore:', error);
+                throw error;
+            }
+        }
+
+        // Record a new deposit
+        async function recordDeposit(address, amountSol, xyzAllocated, transactionId) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const depositsRef = walletRef.collection('deposits');
+                
+                // Add deposit record to subcollection
+                await depositsRef.doc(transactionId).set({
+                    amountSol: amountSol,
+                    xyzAllocated: xyzAllocated,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    usdValue: amountSol * 100 // Assuming 1 SOL = $100
+                });
+                
+                // Update main wallet document
+                await walletRef.update({
+                    totalSolDeposits: firebase.firestore.FieldValue.increment(amountSol),
+                    totalXyzBalance: firebase.firestore.FieldValue.increment(xyzAllocated),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Error recording deposit:', error);
+                throw error;
+            }
+        }
+
+        // Load user data with deposit history
+        async function loadUserData(address) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const walletDoc = await walletRef.get();
+                
+                if (!walletDoc.exists) return;
+                
+                const walletData = walletDoc.data();
+                contributionSpan.textContent = `${walletData.totalSolDeposits || 0} SOL`;
+                xyzTokensSpan.textContent = `${walletData.totalXyzBalance || 0} XYZ`;
+                
+                return walletData;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                throw error;
+            }
+        }
+
+        // Load deposit history
+        async function loadDepositHistory(address) {
+            try {
+                const depositsRef = db.collection('PresaleAddress').doc(address).collection('deposits');
+                const querySnapshot = await depositsRef.orderBy('timestamp', 'desc').get();
+                
+                const deposits = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    deposits.push({
+                        id: doc.id,
+                        amountSol: data.amountSol,
+                        xyzAllocated: data.xyzAllocated,
+                        timestamp: data.timestamp?.toDate() || new Date(),
+                        usdValue: data.usdValue
+                    });
+                });
+                
+                return deposits;
+            } catch (error) {
+                console.error('Error loading deposit history:', error);
+                throw error;
+            }
+        }
+
+        // Buy XYZ tokens
+        async function buyXyzTokens(amount) {
             if (!wallet || !walletAddress) {
-                showNotification('Please connect your wallet first', 'error');
+                showNotification('Please connect your wallet first.', 'error');
+                return;
+            }
+
+            if (!selectedAmount) {
+                showNotification('Please select an amount first.', 'error');
                 return;
             }
 
             if (isProcessing) return;
             isProcessing = true;
-
+            
             try {
-                const originalText = buyButton.textContent;
+                // Update button to show loading state
+                originalButtonText = buyButton.textContent;
                 buyButton.innerHTML = `PROCESSING <span class="loading"></span>`;
                 buyButton.disabled = true;
-
+                
                 // Convert amount to lamports
                 const lamports = amount * solanaWeb3.LAMPORTS_PER_SOL;
                 const destinationAddress = new solanaWeb3.PublicKey('99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf');
@@ -545,34 +798,93 @@
                         lamports: lamports
                     })
                 );
-
+                
                 // Set recent blockhash
                 const { blockhash } = await connection.getRecentBlockhash();
                 transaction.recentBlockhash = blockhash;
                 transaction.feePayer = wallet.publicKey;
-
+                
                 // Sign and send transaction
-                const signedTransaction = await wallet.signTransaction(transaction);
-                const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-
+                let signature;
+                
+                // Handle different wallet providers
+                if (wallet.signAndSendTransaction) {
+                    // Most modern wallets use this
+                    signature = await wallet.signAndSendTransaction(transaction);
+                } else if (wallet.signTransaction) {
+                    // Legacy support
+                    const signed = await wallet.signTransaction(transaction);
+                    signature = await connection.sendRawTransaction(signed.serialize());
+                } else {
+                    throw new Error('Wallet does not support transaction signing');
+                }
+                
                 // Confirm transaction
-                await connection.confirmTransaction(signature, 'confirmed');
-
+                const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+                if (confirmation.value.err) {
+                    throw new Error('Transaction failed');
+                }
+                
+                // Calculate XYZ tokens (1 SOL = $100, $0.01 per XYZ)
+                const solToUsd = 100; // Example rate - replace with actual price fetch
+                const usdAmount = amount * solToUsd;
+                const xyzAmount = usdAmount / 0.01;
+                
+                // Record deposit in Firestore
+                await recordDeposit(walletAddress, amount, xyzAmount, signature);
+                
                 // Update UI
-                const currentContribution = parseFloat(contributionSpan.textContent) || 0;
-                const currentTokens = parseFloat(xyzTokensSpan.textContent) || 0;
+                await loadUserData(walletAddress);
                 
-                contributionSpan.textContent = (currentContribution + amount).toFixed(1) + ' SOL';
-                xyzTokensSpan.textContent = (currentTokens + (amount * 10000)).toLocaleString() + ' TOKENS';
-                
-                showNotification(`Success! ${(amount * 10000).toLocaleString()} tokens purchased`, 'success');
+                showNotification(`Successfully purchased ${xyzAmount.toLocaleString()} XYZ tokens!`, 'success');
             } catch (error) {
-                console.error('Error buying tokens:', error);
-                showNotification('Transaction failed', 'error');
+                console.error('Error buying XYZ tokens:', error);
+                showNotification('Transaction failed. ' + (error.message || 'Please try again.'), 'error');
             } finally {
-                buyButton.textContent = originalText || `BUY FOR ${selectedAmount} SOL`;
+                // Reset button state
+                buyButton.textContent = originalButtonText || `BUY XYZ FOR ${selectedAmount} SOL`;
                 buyButton.disabled = false;
                 isProcessing = false;
+            }
+        }
+
+        // Show deposit history modal
+        async function showHistoryModal() {
+            if (!walletAddress) {
+                showNotification('Please connect your wallet first.', 'error');
+                return;
+            }
+
+            try {
+                depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--secondary);">Loading history...</div>';
+                historyModal.style.display = 'block';
+                
+                const deposits = await loadDepositHistory(walletAddress);
+                
+                if (deposits.length === 0) {
+                    depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--secondary);">No deposits yet</div>';
+                    return;
+                }
+                
+                depositHistoryDiv.innerHTML = '';
+                deposits.forEach(deposit => {
+                    const item = document.createElement('div');
+                    item.className = 'deposit-item';
+                    item.innerHTML = `
+                        <div>
+                            <div class="deposit-date">${deposit.timestamp.toLocaleString()}</div>
+                            <div class="deposit-tx" onclick="window.open('https://solscan.io/tx/${deposit.id}', '_blank')">TX: ${shortenAddress(deposit.id)}</div>
+                        </div>
+                        <div class="deposit-amount">
+                            <div class="deposit-sol">${deposit.amountSol} SOL</div>
+                            <div class="deposit-xyz">+${deposit.xyzAllocated.toLocaleString()} XYZ</div>
+                        </div>
+                    `;
+                    depositHistoryDiv.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading history:', error);
+                depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load history</div>';
             }
         }
 
@@ -587,13 +899,44 @@
             }, 5000);
         }
 
-         // Shorten address
+        // Shorten wallet address
         function shortenAddress(address) {
-            return address ? `${address.slice(0, 4)}...${address.slice(-4)}` : '';
+            if (!address) return '';
+            return `${address.slice(0, 4)}...${address.slice(-4)}`;
+        }
+
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 1px and 3px
+                const size = Math.random() * 2 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Random animation duration between 10s and 20s
+                const duration = Math.random() * 10 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
         }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
             initSolana();
             
             // Connect wallet button
@@ -602,13 +945,28 @@
             // Wallet connected div (disconnect)
             walletConnectedDiv.addEventListener('click', disconnectWallet);
             
+            // Wallet selector options
+            phantomOption.addEventListener('click', () => connectToWallet('phantom'));
+            okxOption.addEventListener('click', () => connectToWallet('okx'));
+            solflareOption.addEventListener('click', () => connectToWallet('solflare'));
+            
+            // Close wallet selector
+            closeWalletSelector.addEventListener('click', hideWalletSelector);
+            
             // Presale option selection
             presaleOptions.forEach(option => {
                 option.addEventListener('click', () => {
+                    // Remove active class from all options
                     presaleOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // Add active class to selected option
                     option.classList.add('active');
+                    
+                    // Set selected amount
                     selectedAmount = parseFloat(option.dataset.amount);
-                    buyButton.textContent = `BUY FOR ${selectedAmount} SOL`;
+                    
+                    // Update buy button
+                    buyButton.textContent = `BUY XYZ FOR ${selectedAmount} SOL`;
                     buyButton.disabled = false;
                 });
             });
@@ -616,13 +974,26 @@
             // Buy button
             buyButton.addEventListener('click', () => {
                 if (selectedAmount) {
-                    buyTokens(selectedAmount);
+                    buyXyzTokens(selectedAmount);
                 }
             });
             
             // View history button
-            viewHistoryBtn.addEventListener('click', () => {
-                showNotification('Feature coming soon', 'info');
+            viewHistoryBtn.addEventListener('click', showHistoryModal);
+            
+            // Close modal
+            closeModal.addEventListener('click', () => {
+                historyModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (event) => {
+                if (event.target === historyModal) {
+                    historyModal.style.display = 'none';
+                }
+                if (event.target === walletSelector) {
+                    hideWalletSelector();
+                }
             });
         });
     </script>
