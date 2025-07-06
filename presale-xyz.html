@@ -371,6 +371,37 @@
                 gap: 10px;
             }
         }
+    :root {
+            --primary: #00ff88;
+            --secondary: #aaaaaa;
+            --dark: #121212;
+            --darker: #000000;
+            --light: #ffffff;
+            --glass: rgba(30, 30, 30, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --error: #ff0033;
+            --accent: #7a2cff;
+            --accent-dark: #5a1cc2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--darker);
+            color: var(--light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(122, 44, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 255, 136, 0.15) 0%, transparent 50%);
+        }
+
     </style>
 </head>
 <body>
