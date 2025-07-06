@@ -10,18 +10,21 @@
     <script src="https://unpkg.com/@solana/wallet-adapter-base@0.9.20/lib/index.iife.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
     <style>
         :root {
-            --primary: #ffffff;
+            --primary: #00ff88;
             --secondary: #aaaaaa;
             --dark: #121212;
             --darker: #000000;
             --light: #ffffff;
-            --glass: rgba(30, 30, 30, 0.7);
+            --glass: rgba(30, 30, 30, 0.5);
             --glass-border: rgba(255, 255, 255, 0.1);
             --success: #00ff88;
             --error: #ff0033;
+            --warning: #ffcc00;
             --accent: #7a2cff;
+            --accent-dark: #5a1cc2;
         }
 
         * {
@@ -37,8 +40,8 @@
             min-height: 100vh;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 25% 25%, rgba(122, 44, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 25% 25%, rgba(122, 44, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 255, 136, 0.15) 0%, transparent 50%);
         }
 
         .container {
@@ -63,6 +66,26 @@
             color: var(--primary);
             text-transform: uppercase;
             letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s ease;
+        }
+
+        .logo:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
         }
 
         .connect-wallet {
@@ -75,13 +98,39 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        .connect-wallet::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.1), rgba(122, 44, 255, 0.1));
+            z-index: -1;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
         }
 
         .connect-wallet:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .connect-wallet:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .connect-wallet:active {
+            transform: translateY(0);
         }
 
         .wallet-connected {
@@ -92,21 +141,47 @@
             padding: 12px 24px;
             border-radius: 50px;
             border: 1px solid var(--primary);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wallet-connected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.1), rgba(122, 44, 255, 0.1));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .wallet-connected:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .wallet-connected:hover::before {
+            opacity: 1;
         }
 
         .wallet-address {
             font-family: 'Orbitron', sans-serif;
             font-size: 0.9rem;
             color: var(--primary);
+        }
+
+        .wallet-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
 
         .hero {
@@ -122,16 +197,27 @@
 
         .hero h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 3.5rem;
+            font-size: 4rem;
             margin-bottom: 20px;
             color: var(--primary);
             text-transform: uppercase;
             letter-spacing: 5px;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            animation: pulse 2s infinite alternate;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            position: relative;
+        }
+
+        @keyframes pulse {
+            0% {
+                text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            }
         }
 
         .hero p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             max-width: 700px;
             margin-bottom: 40px;
             line-height: 1.6;
@@ -148,12 +234,28 @@
             max-width: 800px;
             margin: 0 auto;
             transition: all 0.3s ease;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(0);
+        }
+
+        .presale-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            z-index: -1;
+            border-radius: 22px;
+            opacity: 0.2;
         }
 
         .presale-container:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
         }
 
         .presale-header {
@@ -167,11 +269,12 @@
             font-family: 'Orbitron', sans-serif;
             font-size: 1.8rem;
             color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
         }
 
         .presale-stats {
             display: flex;
-            gap: 15px;
+            gap: 20px;
         }
 
         .stat-box {
@@ -180,8 +283,12 @@
             border-radius: 10px;
             text-align: center;
             border: 1px solid var(--glass-border);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
         .stat-label {
@@ -192,14 +299,14 @@
 
         .stat-value {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--primary);
         }
 
         .presale-options {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 20px;
             margin-bottom: 30px;
         }
 
@@ -211,25 +318,41 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .presale-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 136, 0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
         }
 
         .presale-option:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            border-color: var(--primary);
+        }
+
+        .presale-option:hover::before {
+            transform: translateX(100%);
         }
 
         .presale-option.active {
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+            background: rgba(0, 255, 136, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
         }
 
         .presale-option-amount {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             margin-bottom: 10px;
             color: var(--primary);
         }
@@ -245,7 +368,6 @@
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 30px;
-            backdrop-filter: blur(5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
@@ -273,23 +395,46 @@
 
         .buy-button {
             width: 100%;
-            background: linear-gradient(45deg, var(--accent), #5a1cc2);
+            background: linear-gradient(45deg, var(--accent-dark), var(--accent));
             border: none;
             padding: 15px;
             border-radius: 10px;
             color: white;
             font-family: 'Orbitron', sans-serif;
             font-weight: 500;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
             box-shadow: 0 5px 15px rgba(122, 44, 255, 0.3);
             text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .buy-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .buy-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(122, 44, 255, 0.4);
+        }
+
+        .buy-button:hover::before {
+            opacity: 1;
+        }
+
+        .buy-button:active {
+            transform: translateY(0);
         }
 
         .buy-button:disabled {
@@ -301,19 +446,34 @@
             transform: none;
         }
 
-        .view-history {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: var(--secondary);
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Orbitron', sans-serif;
+        .buy-button:disabled::before {
+            display: none;
         }
 
-        .view-history:hover {
-            color: var(--primary);
-            transform: translateY(-2px);
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+            }
         }
 
         .notification {
@@ -322,7 +482,6 @@
             right: 20px;
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--primary);
             border-radius: 10px;
             padding: 15px 20px;
             color: white;
@@ -331,6 +490,10 @@
             transition: transform 0.3s ease;
             z-index: 1000;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 350px;
         }
 
         .notification.show {
@@ -338,11 +501,162 @@
         }
 
         .notification.success {
-            border-color: var(--success);
+            border-left: 4px solid var(--success);
         }
 
         .notification.error {
-            border-color: var(--error);
+            border-left: 4px solid var(--error);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .notification-icon {
+            font-size: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            margin: 10% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            animation: modalFadeIn 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            z-index: -1;
+            border-radius: 17px;
+            opacity: 0.2;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-modal {
+            color: var(--secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .deposit-history {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .deposit-item {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            padding: 15px;
+        }
+
+        .deposit-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .deposit-date {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .deposit-tx {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-top: 5px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .deposit-tx:hover {
+            color: var(--accent);
+        }
+
+        .deposit-amount {
+            text-align: right;
+        }
+
+        .deposit-sol {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .deposit-xyz {
+            color: var(--success);
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 5px;
+        }
+
+        .view-history {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .view-history:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
         }
 
         .loading {
@@ -361,6 +675,219 @@
             to { transform: rotate(360deg); }
         }
 
+        .wallet-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-selector.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .wallet-selector-content {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+            .wallet-selector-content::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            z-index: -1;
+            border-radius: 22px;
+            opacity: 0.2;
+        }
+
+        .wallet-selector-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .wallet-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-option:hover {
+            background: rgba(0, 0, 0, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .wallet-icon-large {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .wallet-icon-large img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .wallet-name {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .close-wallet-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--secondary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-wallet-selector:hover {
+            color: var(--primary);
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        /* Custom amount input */
+        .custom-amount {
+            margin: 20px 0;
+        }
+
+        .custom-amount-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 15px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .custom-amount-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Referral section */
+        .referral-section {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .referral-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .referral-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .referral-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .referral-button {
+            width: 100%;
+            background: rgba(122, 44, 255, 0.2);
+            border: 1px solid var(--accent);
+            padding: 12px;
+            border-radius: 10px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .referral-button:hover {
+            background: rgba(122, 44, 255, 0.3);
+        }
+
+        /* Responsive styles */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
@@ -374,39 +901,176 @@
                 flex-direction: column;
                 gap: 10px;
             }
-        }
-    :root {
-            --primary: #00ff88;
-            --secondary: #aaaaaa;
-            --dark: #121212;
-            --darker: #000000;
-            --light: #ffffff;
-            --glass: rgba(30, 30, 30, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --success: #00ff88;
-            --error: #ff0033;
-            --accent: #7a2cff;
-            --accent-dark: #5a1cc2;
+            
+            .modal-content {
+                margin: 20% auto;
+                width: 95%;
+            }
+            
+            .wallet-selector-content {
+                padding: 20px;
+            }
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Countdown timer */
+        .countdown {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2rem;
         }
 
-        body {
-            background: var(--darker);
-            color: var(--light);
-            font-family: 'Montserrat', sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(122, 44, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(0, 255, 136, 0.15) 0%, transparent 50%);
+        /* Transaction status modal */
+        .tx-status {
+            text-align: center;
+            margin: 20px 0;
         }
 
-    </style>
+        .tx-status-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .tx-status-message {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+        }
+
+        .tx-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            display: block;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Balance check */
+        .balance-check {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .balance-amount {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Tokenomics section */
+        .tokenomics {
+            margin-top: 40px;
+            background: var(--glass);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .tokenomics-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .tokenomics-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .tokenomics-item:last-child {
+            border-bottom: none;
+        }
+
+        .tokenomics-label {
+            color: var(--secondary);
+        }
+
+        .tokenomics-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+        }
+
+        /* FAQ section */
+        .faq {
+            margin-top: 40px;
+            background: var(--glass);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .faq-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .faq-item {
+            margin-bottom: 15px;
+        }
+
+        .faq-question {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            color: var(--secondary);
+            padding-left: 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 200px;
+            padding-top: 10px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .social-link {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .social-link:hover {
+            color: var(--accent);
+        }
+      </style>
 </head>
 <body>
     <div class="particles" id="particles"></div>
@@ -437,7 +1101,17 @@
                             <div class="stat-label">STAGE</div>
                             <div class="stat-value">1/5</div>
                         </div>
+                        <div class="stat-box">
+                            <div class="stat-label">ENDS IN</div>
+                            <div class="stat-value" id="countdown">7D 23H</div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar" style="width: 35%"></div>
+                    <div class="progress-text" id="progressText">35% of $1,000,000 goal raised</div>
                 </div>
                 
                 <div class="presale-options">
@@ -452,6 +1126,15 @@
                     <div class="presale-option" data-amount="0.5">
                         <div class="presale-option-amount">0.5 SOL</div>
                         <div class="presale-option-label">≈ 5000 XYZ</div>
+                    </div>
+                </div>
+
+                <!-- Custom amount input -->
+                <div class="custom-amount">
+                    <input type="number" class="custom-amount-input" id="customAmount" placeholder="Enter custom SOL amount" min="0.01" step="0.01">
+                    <div class="balance-check">
+                        <span>Your balance:</span>
+                        <span class="balance-amount" id="walletBalance">0 SOL</span>
                     </div>
                 </div>
                 
@@ -472,12 +1155,85 @@
                 
                 <button class="buy-button" id="buyButton" disabled>CONNECT WALLET TO PARTICIPATE</button>
                 <span class="view-history" id="viewHistory">View Deposit History</span>
+
+                <!-- Referral section -->
+                <div class="referral-section">
+                    <div class="referral-title">HAVE A REFERRAL CODE?</div>
+                    <input type="text" class="referral-input" id="referralCode" placeholder="Enter referral code (optional)">
+                    <button class="referral-button" id="applyReferral">APPLY REFERRAL</button>
+                </div>
+            </div>
+
+            <!-- Tokenomics section -->
+            <div class="tokenomics">
+                <h3 class="tokenomics-title">TOKENOMICS</h3>
+                <div class="tokenomics-item">
+                    <span class="tokenomics-label">Total Supply</span>
+                    <span class="tokenomics-value">1,000,000,000 XYZ</span>
+                </div>
+                <div class="tokenomics-item">
+                    <span class="tokenomics-label">Presale Allocation</span>
+                    <span class="tokenomics-value">30% (300,000,000 XYZ)</span>
+                </div>
+                <div class="tokenomics-item">
+                    <span class="tokenomics-label">Liquidity</span>
+                    <span class="tokenomics-value">40% (400,000,000 XYZ)</span>
+                </div>
+                <div class="tokenomics-item">
+                    <span class="tokenomics-label">Team</span>
+                    <span class="tokenomics-value">15% (150,000,000 XYZ)</span>
+                </div>
+                <div class="tokenomics-item">
+                    <span class="tokenomics-label">Marketing</span>
+                    <span class="tokenomics-value">15% (150,000,000 XYZ)</span>
+                </div>
+            </div>
+
+            <!-- FAQ section -->
+            <div class="faq">
+                <h3 class="faq-title">FREQUENTLY ASKED QUESTIONS</h3>
+                <div class="faq-item">
+                    <div class="faq-question">What is XYZ Innovagence? <span>+</span></div>
+                    <div class="faq-answer">
+                        XYZ Innovagence is a decentralized platform revolutionizing the way we interact with blockchain technology. Our token powers the ecosystem and provides access to premium features.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">When will I receive my tokens? <span>+</span></div>
+                    <div class="faq-answer">
+                        Tokens purchased during the presale will be distributed 30 days after the Token Generation Event (TGE). You'll receive them directly to your connected wallet.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">What is the minimum investment? <span>+</span></div>
+                    <div class="faq-answer">
+                        The minimum investment is 0.01 SOL. You can enter any amount above this threshold using the custom amount field.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">How do I participate? <span>+</span></div>
+                    <div class="faq-answer">
+                        Simply connect your Solana wallet, select an amount or enter a custom value, and click "Buy XYZ". Approve the transaction in your wallet to complete the purchase.
+                    </div>
+                </div>
             </div>
         </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2023 XYZ Innovagence. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">Twitter</a>
+                <a href="#" class="social-link">Telegram</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Medium</a>
+            </div>
+        </footer>
     </div>
     
     <div class="notification" id="notification"></div>
 
+    <!-- Deposit History Modal -->
     <div class="modal" id="historyModal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -488,6 +1244,7 @@
         </div>
     </div>
 
+    <!-- Wallet Selector Modal -->
     <div class="wallet-selector" id="walletSelector">
         <div class="wallet-selector-content">
             <span class="close-wallet-selector" id="closeWalletSelector">&times;</span>
@@ -514,7 +1271,19 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Transaction Status Modal -->
+    <div class="modal" id="txModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeTxModal">&times;</span>
+            <div class="tx-status">
+                <div class="tx-status-icon">⏳</div>
+                <h3 class="modal-title" id="txStatusTitle">TRANSACTION IN PROGRESS</h3>
+                <div class="tx-status-message" id="txStatusMessage">Waiting for wallet confirmation...</div>
+                <a href="#" target="_blank" class="tx-link" id="txLink" style="display: none;">View on Solscan</a>
+            </div>
+        </div>
+    </div>
 <script>
         // Firebase configuration
         const firebaseConfig = {
@@ -530,6 +1299,7 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const functions = firebase.functions();
 
         // DOM elements
         const connectWalletBtn = document.getElementById('connectWallet');
@@ -549,6 +1319,19 @@
         const phantomOption = document.getElementById('phantomOption');
         const okxOption = document.getElementById('okxOption');
         const solflareOption = document.getElementById('solflareOption');
+        const customAmountInput = document.getElementById('customAmount');
+        const walletBalanceSpan = document.getElementById('walletBalance');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const countdownElement = document.getElementById('countdown');
+        const referralCodeInput = document.getElementById('referralCode');
+        const applyReferralBtn = document.getElementById('applyReferral');
+        const txModal = document.getElementById('txModal');
+        const txStatusTitle = document.getElementById('txStatusTitle');
+        const txStatusMessage = document.getElementById('txStatusMessage');
+        const txLink = document.getElementById('txLink');
+        const closeTxModal = document.getElementById('closeTxModal');
+        const faqItems = document.querySelectorAll('.faq-item');
 
         // App state
         let wallet = null;
@@ -558,6 +1341,13 @@
         let isProcessing = false;
         let originalButtonText = '';
         let walletType = null;
+        let referralCode = null;
+        let currentSolPrice = 100; // Default SOL price in USD
+        let presaleStats = {
+            totalRaised: 0,
+            goal: 1000000,
+            endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+        };
 
         // Initialize Solana connection
         async function initSolana() {
@@ -571,11 +1361,85 @@
                     walletAddress = wallet.publicKey.toString();
                     updateUIAfterConnection();
                     await loadUserData(walletAddress);
+                    await fetchWalletBalance();
                 }
+
+                // Load presale stats
+                await loadPresaleStats();
+                
+                // Update countdown timer
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+
+                // Get current SOL price
+                await fetchSolPrice();
             } catch (error) {
                 console.error('Error initializing Solana:', error);
                 showNotification('Failed to connect to Solana network', 'error');
             }
+        }
+  // Fetch current SOL price from CoinGecko
+        async function fetchSolPrice() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+                const data = await response.json();
+                currentSolPrice = data.solana.usd;
+            } catch (error) {
+                console.error('Error fetching SOL price:', error);
+                // Use default price if API fails
+                currentSolPrice = 100;
+            }
+        }
+
+        // Fetch wallet balance
+        async function fetchWalletBalance() {
+            if (!walletAddress) return;
+            
+            try {
+                const publicKey = new solanaWeb3.PublicKey(walletAddress);
+                const balance = await connection.getBalance(publicKey);
+                const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                walletBalanceSpan.textContent = `${solBalance.toFixed(2)} SOL`;
+            } catch (error) {
+                console.error('Error fetching wallet balance:', error);
+                walletBalanceSpan.textContent = 'Error loading balance';
+            }
+        }
+
+        // Load presale stats from Firestore
+        async function loadPresaleStats() {
+            try {
+                const statsDoc = await db.collection('PresaleStats').doc('current').get();
+                if (statsDoc.exists) {
+                    const data = statsDoc.data();
+                    presaleStats.totalRaised = data.totalRaised || 0;
+                    presaleStats.goal = data.goal || 1000000;
+                    presaleStats.endTime = data.endTime?.toDate() || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                    
+                    // Update progress bar
+                    const progressPercent = Math.min(100, (presaleStats.totalRaised / presaleStats.goal) * 100);
+                    progressBar.style.width = `${progressPercent}%`;
+                    progressText.textContent = `${progressPercent.toFixed(1)}% of $${(presaleStats.goal / 1000000).toFixed(1)}M goal raised`;
+                }
+            } catch (error) {
+                console.error('Error loading presale stats:', error);
+            }
+        }
+
+        // Update countdown timer
+        function updateCountdown() {
+            const now = new Date();
+            const diff = presaleStats.endTime - now;
+            
+            if (diff <= 0) {
+                countdownElement.textContent = 'ENDED';
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            
+            countdownElement.textContent = `${days}D ${hours}H`;
         }
 
         // Update UI after wallet connection
@@ -653,6 +1517,7 @@
                 
                 // Load user data
                 await loadUserData(walletAddress);
+                await fetchWalletBalance();
                 
                 hideWalletSelector();
                 showNotification('Wallet connected successfully!', 'success');
@@ -682,6 +1547,7 @@
                 walletAddress = null;
                 selectedAmount = null;
                 walletType = null;
+                referralCode = null;
                 
                 // Update UI
                 walletConnectedDiv.style.display = 'none';
@@ -690,6 +1556,9 @@
                 buyButton.disabled = true;
                 contributionSpan.textContent = '0 SOL';
                 xyzTokensSpan.textContent = '0 XYZ';
+                walletBalanceSpan.textContent = '0 SOL';
+                customAmountInput.value = '';
+                referralCodeInput.value = '';
                 
                 // Remove active class from options
                 presaleOptions.forEach(opt => opt.classList.remove('active'));
@@ -700,8 +1569,7 @@
                 showNotification('Failed to disconnect wallet', 'error');
             }
         }
-
-        // Save wallet to Firestore
+   // Save wallet to Firestore
         async function saveWalletToFirestore(address, type) {
             try {
                 const walletRef = db.collection('PresaleAddress').doc(address);
@@ -713,13 +1581,16 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         totalSolDeposits: 0,
                         totalXyzBalance: 0,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                        referralCode: null,
+                        referredBy: referralCode || null
                     });
                 } else {
                     // Update wallet type if it changed
                     await walletRef.update({
                         walletType: type,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                        referredBy: referralCode || firebase.firestore.FieldValue.delete()
                     });
                 }
             } catch (error) {
@@ -733,13 +1604,15 @@
             try {
                 const walletRef = db.collection('PresaleAddress').doc(address);
                 const depositsRef = walletRef.collection('deposits');
+                const statsRef = db.collection('PresaleStats').doc('current');
                 
                 // Add deposit record to subcollection
                 await depositsRef.doc(transactionId).set({
                     amountSol: amountSol,
                     xyzAllocated: xyzAllocated,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    usdValue: amountSol * 100 // Assuming 1 SOL = $100
+                    usdValue: amountSol * currentSolPrice,
+                    transactionId: transactionId
                 });
                 
                 // Update main wallet document
@@ -748,6 +1621,15 @@
                     totalXyzBalance: firebase.firestore.FieldValue.increment(xyzAllocated),
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
+                // Update presale stats
+                await statsRef.update({
+                    totalRaised: firebase.firestore.FieldValue.increment(amountSol * currentSolPrice),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Update progress bar
+                await loadPresaleStats();
                 
                 return true;
             } catch (error) {
@@ -767,6 +1649,12 @@
                 const walletData = walletDoc.data();
                 contributionSpan.textContent = `${walletData.totalSolDeposits || 0} SOL`;
                 xyzTokensSpan.textContent = `${walletData.totalXyzBalance || 0} XYZ`;
+                
+                // Check if user has a referral code
+                if (walletData.referralCode) {
+                    referralCodeInput.value = walletData.referralCode;
+                    referralCode = walletData.referralCode;
+                }
                 
                 return walletData;
             } catch (error) {
@@ -807,8 +1695,8 @@
                 return;
             }
 
-            if (!selectedAmount) {
-                showNotification('Please select an amount first.', 'error');
+            if (!amount || amount <= 0) {
+                showNotification('Please enter a valid amount.', 'error');
                 return;
             }
 
@@ -816,6 +1704,12 @@
             isProcessing = true;
             
             try {
+                // Show transaction status modal
+                txStatusTitle.textContent = 'TRANSACTION IN PROGRESS';
+                txStatusMessage.textContent = 'Waiting for wallet confirmation...';
+                txLink.style.display = 'none';
+                txModal.style.display = 'block';
+                
                 // Update button to show loading state
                 originalButtonText = buyButton.textContent;
                 buyButton.innerHTML = `PROCESSING <span class="loading"></span>`;
@@ -839,6 +1733,9 @@
                 transaction.recentBlockhash = blockhash;
                 transaction.feePayer = wallet.publicKey;
                 
+                // Update status
+                txStatusMessage.textContent = 'Please approve the transaction in your wallet...';
+                
                 // Sign and send transaction
                 let signature;
                 
@@ -854,15 +1751,21 @@
                     throw new Error('Wallet does not support transaction signing');
                 }
                 
+                // Update status
+                txStatusTitle.textContent = 'TRANSACTION SUBMITTED';
+                txStatusMessage.textContent = 'Waiting for network confirmation...';
+                txLink.href = `https://solscan.io/tx/${signature}`;
+                txLink.textContent = `View on Solscan: ${shortenAddress(signature)}`;
+                txLink.style.display = 'block';
+                
                 // Confirm transaction
                 const confirmation = await connection.confirmTransaction(signature, 'confirmed');
                 if (confirmation.value.err) {
                     throw new Error('Transaction failed');
                 }
                 
-                // Calculate XYZ tokens (1 SOL = $100, $0.01 per XYZ)
-                const solToUsd = 100; // Example rate - replace with actual price fetch
-                const usdAmount = amount * solToUsd;
+                // Calculate XYZ tokens ($0.01 per XYZ)
+                const usdAmount = amount * currentSolPrice;
                 const xyzAmount = usdAmount / 0.01;
                 
                 // Record deposit in Firestore
@@ -870,14 +1773,26 @@
                 
                 // Update UI
                 await loadUserData(walletAddress);
+                await fetchWalletBalance();
+                
+                // Update status
+                txStatusTitle.textContent = 'TRANSACTION SUCCESSFUL';
+                txStatusMessage.textContent = `You've successfully purchased ${xyzAmount.toLocaleString()} XYZ tokens!`;
                 
                 showNotification(`Successfully purchased ${xyzAmount.toLocaleString()} XYZ tokens!`, 'success');
+                
+                // Close modal after 3 seconds
+                setTimeout(() => {
+                    txModal.style.display = 'none';
+                }, 3000);
             } catch (error) {
                 console.error('Error buying XYZ tokens:', error);
+                txStatusTitle.textContent = 'TRANSACTION FAILED';
+                txStatusMessage.textContent = error.message || 'Transaction failed. Please try again.';
                 showNotification('Transaction failed. ' + (error.message || 'Please try again.'), 'error');
             } finally {
                 // Reset button state
-                buyButton.textContent = originalButtonText || `BUY XYZ FOR ${selectedAmount} SOL`;
+                buyButton.textContent = originalButtonText || `BUY XYZ FOR ${selectedAmount || customAmountInput.value || '...'} SOL`;
                 buyButton.disabled = false;
                 isProcessing = false;
             }
@@ -923,12 +1838,66 @@
             }
         }
 
+   // Apply referral code
+        async function applyReferral() {
+            const code = referralCodeInput.value.trim();
+            if (!code) {
+                showNotification('Please enter a referral code', 'warning');
+                return;
+            }
+
+            if (!walletAddress) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+
+            try {
+                // Check if referral code is valid (you might want to add more validation)
+                if (code.length < 6 || code.length > 12) {
+                    throw new Error('Invalid referral code format');
+                }
+
+                // Save referral code to user's document
+                const walletRef = db.collection('PresaleAddress').doc(walletAddress);
+                await walletRef.update({
+                    referralCode: code,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                referralCode = code;
+                showNotification('Referral code applied successfully!', 'success');
+            } catch (error) {
+                console.error('Error applying referral code:', error);
+                showNotification(error.message || 'Failed to apply referral code', 'error');
+            }
+        }
+
         // Show notification
         function showNotification(message, type = 'info') {
-            notification.textContent = message;
+            // Clear previous notifications
             notification.className = 'notification';
+            notification.innerHTML = '';
+            
+            // Add icon based on type
+            let icon = 'ℹ️';
+            if (type === 'success') icon = '✅';
+            if (type === 'error') icon = '❌';
+            if (type === 'warning') icon = '⚠️';
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'notification-icon';
+            iconSpan.textContent = icon;
+            notification.appendChild(iconSpan);
+            
+            // Add message
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            notification.appendChild(messageSpan);
+            
+            // Show notification
             notification.classList.add(type, 'show');
             
+            // Auto-hide after 5 seconds
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 5000);
@@ -969,10 +1938,24 @@
             }
         }
 
+        // Initialize FAQ toggles
+        function initFAQ() {
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                question.addEventListener('click', () => {
+                    item.classList.toggle('active');
+                    // Update the +/- sign
+                    const span = question.querySelector('span');
+                    span.textContent = item.classList.contains('active') ? '−' : '+';
+                });
+            });
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             createParticles();
             initSolana();
+            initFAQ();
             
             // Connect wallet button
             connectWalletBtn.addEventListener('click', connectWallet);
@@ -999,6 +1982,7 @@
                     
                     // Set selected amount
                     selectedAmount = parseFloat(option.dataset.amount);
+                    customAmountInput.value = '';
                     
                     // Update buy button
                     buyButton.textContent = `BUY XYZ FOR ${selectedAmount} SOL`;
@@ -1006,22 +1990,43 @@
                 });
             });
             
+            // Custom amount input
+            customAmountInput.addEventListener('input', () => {
+                const value = parseFloat(customAmountInput.value);
+                if (!isNaN(value) && value > 0) {
+                    // Remove active class from preset options
+                    presaleOptions.forEach(opt => opt.classList.remove('active'));
+                    selectedAmount = value;
+                    
+                    // Update buy button
+                    buyButton.textContent = `BUY XYZ FOR ${value} SOL`;
+                    buyButton.disabled = false;
+                } else {
+                    buyButton.disabled = true;
+                }
+            });
+            
             // Buy button
             buyButton.addEventListener('click', () => {
-                if (selectedAmount) {
-                    buyXyzTokens(selectedAmount);
+                const amount = selectedAmount || parseFloat(customAmountInput.value);
+                if (amount) {
+                    buyXyzTokens(amount);
                 }
             });
             
             // View history button
             viewHistoryBtn.addEventListener('click', showHistoryModal);
             
-            // Close modal
+            // Close modals
             closeModal.addEventListener('click', () => {
                 historyModal.style.display = 'none';
             });
             
-            // Close modal when clicking outside
+            closeTxModal.addEventListener('click', () => {
+                txModal.style.display = 'none';
+            });
+            
+            // Close modals when clicking outside
             window.addEventListener('click', (event) => {
                 if (event.target === historyModal) {
                     historyModal.style.display = 'none';
@@ -1029,7 +2034,21 @@
                 if (event.target === walletSelector) {
                     hideWalletSelector();
                 }
+                if (event.target === txModal) {
+                    txModal.style.display = 'none';
+                }
             });
+            
+            // Apply referral code
+            applyReferralBtn.addEventListener('click', applyReferral);
+            
+            // Check for referral code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            if (refCode) {
+                referralCodeInput.value = refCode;
+                // Don't auto-apply, let user click the button
+            }
         });
     </script>
 </body>
