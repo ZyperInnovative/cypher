@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XYZ Presale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
+    <style>
+        :root {
+            --primary: #ffffff;
+            --secondary: #aaaaaa;
+            --dark: #121212;
+            --darker: #000000;
+            --light: #ffffff;
+            --glass: rgba(30, 30, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --error: #ff0033;
+            --accent: #7a2cff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--darker);
+            color: var(--light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(122, 44, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .connect-wallet {
+            background: transparent;
+            border: 1px solid var(--primary);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .connect-wallet:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .wallet-connected {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass);
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: 1px solid var(--primary);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .wallet-connected:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .wallet-address {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            color: var(--secondary);
+        }
+
+        .presale-container {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .presale-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .presale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .presale-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .presale-stats {
+            display: flex;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .presale-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .presale-option {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .presale-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .presale-option.active {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+        }
+
+        .presale-option-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .presale-option-label {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .presale-details {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--secondary);
+        }
+
+        .detail-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+        }
+
+        .buy-button {
+            width: 100%;
+            background: linear-gradient(45deg, var(--accent), #5a1cc2);
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(122, 44, 255, 0.3);
+            text-transform: uppercase;
+        }
+
+        .buy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(122, 44, 255, 0.4);
+        }
+
+        .buy-button:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--secondary);
+            cursor: not-allowed;
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .view-history {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .view-history:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px 20px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-color: var(--success);
+        }
+
+        .notification.error {
+            border-color: var(--error);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .presale-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .presale-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">XYZ PRESALE</div>
+            <button class="connect-wallet" id="connectWallet">CONNECT WALLET</button>
+            <div class="wallet-connected" id="walletConnected" style="display: none;">
+                <div class="wallet-address" id="walletAddress"></div>
+            </div>
+        </header>
+        
+        <section class="hero">
+            <h1>TOKEN PRESALE</h1>
+            <p>Participate in our exclusive token presale. Secure your tokens before the public launch.</p>
+            
+            <div class="presale-container">
+                <div class="presale-header">
+                    <div class="presale-title">PRESALE</div>
+                    <div class="presale-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">PRICE</div>
+                            <div class="stat-value">$0.01</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">STAGE</div>
+                            <div class="stat-value">1/3</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="presale-options">
+                    <div class="presale-option" data-amount="0.1">
+                        <div class="presale-option-amount">0.1 SOL</div>
+                        <div class="presale-option-label">≈ 1000 TOKENS</div>
+                    </div>
+                    <div class="presale-option" data-amount="0.5">
+                        <div class="presale-option-amount">0.5 SOL</div>
+                        <div class="presale-option-label">≈ 5000 TOKENS</div>
+                    </div>
+                    <div class="presale-option" data-amount="1">
+                        <div class="presale-option-amount">1 SOL</div>
+                        <div class="presale-option-label">≈ 10000 TOKENS</div>
+                    </div>
+                </div>
+                
+                <div class="presale-details">
+                    <div class="detail-row">
+                        <div class="detail-label">Your Contribution</div>
+                        <div class="detail-value" id="contribution">0 SOL</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Your Tokens</div>
+                        <div class="detail-value" id="xyzTokens">0 TOKENS</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Token Release</div>
+                        <div class="detail-value">TGE + 30 Days</div>
+                    </div>
+                </div>
+                
+                <button class="buy-button" id="buyButton" disabled>CONNECT WALLET TO PARTICIPATE</button>
+                <span class="view-history" id="viewHistory">View Transaction History</span>
+            </div>
+        </section>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // DOM elements
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const walletConnectedDiv = document.getElementById('walletConnected');
+        const walletAddressSpan = document.getElementById('walletAddress');
+        const buyButton = document.getElementById('buyButton');
+        const contributionSpan = document.getElementById('contribution');
+        const xyzTokensSpan = document.getElementById('xyzTokens');
+        const notification = document.getElementById('notification');
+        const presaleOptions = document.querySelectorAll('.presale-option');
+        const viewHistoryBtn = document.getElementById('viewHistory');
+
+        // App state
+        let wallet = null;
+        let walletAddress = null;
+        let selectedAmount = null;
+        let connection = null;
+        let isProcessing = false;
+
+        // Initialize Solana connection
+        async function initSolana() {
+            try {
+                connection = new solanaWeb3.Connection(
+                    'https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952', 
+                    'confirmed'
+                );
+
+                // Check if wallet is already connected
+                if (window.solana && window.solana.isConnected) {
+                    wallet = window.solana;
+                    walletAddress = wallet.publicKey.toString();
+                    updateUIForConnectedWallet();
+                }
+            } catch (error) {
+                console.error('Error initializing Solana:', error);
+                showNotification('Failed to connect to network', 'error');
+            }
+        }
+
+        // Connect wallet handler
+        async function connectWallet() {
+            if (!window.solana) {
+                showNotification('Solana wallet not detected. Please install Phantom wallet.', 'error');
+                return;
+            }
+
+            try {
+                wallet = window.solana;
+                const response = await wallet.connect();
+                walletAddress = response.publicKey.toString();
+                updateUIForConnectedWallet();
+                showNotification('Wallet connected successfully!', 'success');
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showNotification('Failed to connect wallet', 'error');
+            }
+        }
+
+        // Update UI when wallet is connected
+        function updateUIForConnectedWallet() {
+            walletConnectedDiv.style.display = 'flex';
+            connectWalletBtn.style.display = 'none';
+            walletAddressSpan.textContent = shortenAddress(walletAddress);
+            buyButton.textContent = 'SELECT AMOUNT TO PARTICIPATE';
+            buyButton.disabled = false;
+        }
+
+        // Disconnect wallet
+        function disconnectWallet() {
+            wallet = null;
+            walletAddress = null;
+            walletConnectedDiv.style.display = 'none';
+            connectWalletBtn.style.display = 'block';
+            buyButton.textContent = 'CONNECT WALLET TO PARTICIPATE';
+            buyButton.disabled = true;
+            showNotification('Wallet disconnected', 'success');
+        }
+
+        // Buy tokens
+        async function buyTokens(amount) {
+            if (!wallet || !walletAddress) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+
+            if (isProcessing) return;
+            isProcessing = true;
+
+            try {
+                const originalText = buyButton.textContent;
+                buyButton.innerHTML = `PROCESSING <span class="loading"></span>`;
+                buyButton.disabled = true;
+
+                // Convert amount to lamports
+                const lamports = amount * solanaWeb3.LAMPORTS_PER_SOL;
+                const destinationAddress = new solanaWeb3.PublicKey('99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf');
+                
+                // Create transaction
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: wallet.publicKey,
+                        toPubkey: destinationAddress,
+                        lamports: lamports
+                    })
+                );
+
+                // Set recent blockhash
+                const { blockhash } = await connection.getRecentBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = wallet.publicKey;
+
+                // Sign and send transaction
+                const signedTransaction = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+
+                // Confirm transaction
+                await connection.confirmTransaction(signature, 'confirmed');
+
+                // Update UI
+                const currentContribution = parseFloat(contributionSpan.textContent) || 0;
+                const currentTokens = parseFloat(xyzTokensSpan.textContent) || 0;
+                
+                contributionSpan.textContent = (currentContribution + amount).toFixed(1) + ' SOL';
+                xyzTokensSpan.textContent = (currentTokens + (amount * 10000)).toLocaleString() + ' TOKENS';
+                
+                showNotification(`Success! ${(amount * 10000).toLocaleString()} tokens purchased`, 'success');
+            } catch (error) {
+                console.error('Error buying tokens:', error);
+                showNotification('Transaction failed', 'error');
+            } finally {
+                buyButton.textContent = originalText || `BUY FOR ${selectedAmount} SOL`;
+                buyButton.disabled = false;
+                isProcessing = false;
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = 'notification';
+            notification.classList.add(type, 'show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+         // Shorten address
+        function shortenAddress(address) {
+            return address ? `${address.slice(0, 4)}...${address.slice(-4)}` : '';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initSolana();
+            
+            // Connect wallet button
+            connectWalletBtn.addEventListener('click', connectWallet);
+            
+            // Wallet connected div (disconnect)
+            walletConnectedDiv.addEventListener('click', disconnectWallet);
+            
+            // Presale option selection
+            presaleOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    presaleOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    selectedAmount = parseFloat(option.dataset.amount);
+                    buyButton.textContent = `BUY FOR ${selectedAmount} SOL`;
+                    buyButton.disabled = false;
+                });
+            });
+            
+            // Buy button
+            buyButton.addEventListener('click', () => {
+                if (selectedAmount) {
+                    buyTokens(selectedAmount);
+                }
+            });
+            
+            // View history button
+            viewHistoryBtn.addEventListener('click', () => {
+                showNotification('Feature coming soon', 'info');
+            });
+        });
+    </script>
+</body>
+</html>
