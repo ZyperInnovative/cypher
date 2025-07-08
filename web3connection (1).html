@@ -1,518 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Wallet Dashboard</title>
-    <style>
-        :root {
-            --primary: #9945FF;
-            --primary-dark: #7B2CBF;
-            --success: #14F195;
-            --danger: #EA3A3D;
-            --text: #FFFFFF;
-            --bg: #0F0F0F;
-            --card-bg: #1E1E1E;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--bg);
-            color: var(--text);
-        }
-        h1 {
-            color: var(--primary);
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .connect-btn {
-            display: block;
-            margin: 30px auto;
-            padding: 12px 24px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .connect-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-        .connect-btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .message {
-            text-align: center;
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-        .success {
-            background-color: rgba(20, 241, 149, 0.2);
-            color: var(--success);
-        }
-        .error {
-            background-color: rgba(234, 58, 61, 0.2);
-            color: var(--danger);
-        }
-        .warning {
-            background-color: rgba(249, 168, 37, 0.2);
-            color: #F9A825;
-        }
-        .dashboard {
-            margin-top: 40px;
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .dashboard h2 {
-            margin-top: 0;
-            color: var(--primary);
-            border-bottom: 1px solid #333;
-            padding-bottom: 15px;
-        }
-        .wallet-item {
-            padding: 15px;
-            border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
-        }
-        .wallet-item:hover {
-            background-color: rgba(153, 69, 255, 0.05);
-        }
-        .wallet-item:last-child {
-            border-bottom: none;
-        }
-        .wallet-address {
-            font-family: monospace;
-            color: var(--success);
-            word-break: break-all;
-            font-size: 14px;
-        }
-        .wallet-time {
-            color: #999;
-            font-size: 13px;
-            margin-top: 5px;
-        }
-        .wallet-network {
-            display: inline-block;
-            background-color: rgba(20, 241, 149, 0.1);
-            color: var(--success);
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .copy-btn {
-            background-color: rgba(153, 69, 255, 0.1);
-            color: var(--primary);
-        }
-        .copy-btn:hover {
-            background-color: rgba(153, 69, 255, 0.3);
-        }
-        .disconnect-btn {
-            background-color: rgba(234, 58, 61, 0.1);
-            color: var(--danger);
-            margin-left: 8px;
-        }
-        .disconnect-btn:hover {
-            background-color: rgba(234, 58, 61, 0.3);
-        }
-        .clear-btn {
-            display: block;
-            margin: 25px auto 0;
-            padding: 10px 20px;
-            background-color: rgba(234, 58, 61, 0.1);
-            color: var(--danger);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .clear-btn:hover {
-            background-color: rgba(234, 58, 61, 0.3);
-        }
-        .wallet-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .wallet-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .wallet-balance {
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 5px;
-            color: var(--success);
-        }
-        .send-sol-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 12px 24px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .send-sol-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-        .send-sol-btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .confirmation-dialog {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .confirmation-content {
-            background-color: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-        .confirmation-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .confirmation-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        .confirm-btn {
-            background-color: var(--success);
-            color: #000;
-        }
-        .cancel-btn {
-            background-color: var(--danger);
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XYZ Coin Presale</title>
+  <!-- Buffer polyfill for Solana -->
+  <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
+  <!-- Solana Web3 -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <!-- Firebase -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+  <!-- Wallet Adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.9.18/lib/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.22/lib/index.umd.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6e45e2;
+      --secondary: #88d3ce;
+      --dark: #1a1a2e;
+      --light: #f1f1f1;
+      --success: #4caf50;
+      --danger: #f44336;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: var(--light);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      color: var(--secondary);
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, var(--secondary), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .wallet-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    
+    .wallet-address {
+      font-family: monospace;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    
+    .btn {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(110, 69, 226, 0.4);
+    }
+    
+    .btn i {
+      margin-right: 8px;
+    }
+    
+    .btn-disconnect {
+      background: var(--danger);
+    }
+    
+    .amount-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    
+    .amount-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .amount-btn:hover {
+      background: rgba(110, 69, 226, 0.3);
+      border-color: var(--primary);
+    }
+    
+    .status {
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    
+    .status-success {
+      background-color: rgba(76, 175, 80, 0.2);
+      border: 1px solid var(--success);
+    }
+    
+    .status-error {
+      background-color: rgba(244, 67, 54, 0.2);
+      border: 1px solid var(--danger);
+    }
+    
+    .dashboard {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 1.5rem;
+      border-radius: 15px;
+      margin-top: 2rem;
+    }
+    
+    .dashboard h3 {
+      margin-top: 0;
+      color: var(--secondary);
+    }
+    
+    .dashboard-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    
+    .progress-container {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin: 1.5rem 0;
+      height: 10px;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      width: 65%;
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .amount-buttons {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Solana Wallet Connection</h1>
+  <div class="container">
+    <header>
+      <h1>XYZ Coin Presale</h1>
+      <p>Participate in the XYZ token presale with SOL</p>
+    </header>
     
-    <div id="walletWarning" class="message warning" style="display: none;">
-        No Solana wallet detected. Please install Phantom or another Solana wallet.
+    <div class="card">
+      <div class="wallet-info">
+        <div class="wallet-address" id="walletAddress">Not connected</div>
+        <button class="btn" id="connectButton" onclick="connectWallet()">
+          <i class="fas fa-wallet"></i> Connect Wallet
+        </button>
+      </div>
+      
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+      <p style="text-align: center;">65% of presale target reached</p>
+      
+      <h2 style="margin-bottom: 1rem;">Select Amount to Invest</h2>
+      <div class="amount-buttons">
+        <button class="amount-btn" onclick="buyToken(0.05)">0.05 SOL</button>
+        <button class="amount-btn" onclick="buyToken(0.08)">0.08 SOL</button>
+        <button class="amount-btn" onclick="buyToken(0.1)">0.1 SOL</button>
+        <button class="amount-btn" onclick="buyToken(0.5)">0.5 SOL</button>
+        <button class="amount-btn" onclick="buyToken(1.0)">1.0 SOL</button>
+      </div>
+      
+      <div id="status" class="status" style="display: none;"></div>
     </div>
     
-    <button id="connectWallet" class="connect-btn">Connect Wallet</button>
-    
-    <div id="walletInfo" class="wallet-info" style="display: none;">
-        <div class="wallet-icon">👛</div>
-        <div>
-            <div id="connectedWallet"></div>
-            <div id="walletBalance" class="wallet-balance"></div>
-        </div>
+    <div class="dashboard card">
+      <h3>Your XYZ Coin Holdings</h3>
+      <div class="dashboard-item">
+        <span>XYZ Coins:</span>
+        <span id="xyzBalance">0</span>
+      </div>
+      <div class="dashboard-item">
+        <span>Total SOL Invested:</span>
+        <span id="solInvested">0</span>
+      </div>
+      <div class="dashboard-item">
+        <span>Last Transaction:</span>
+        <span id="lastTransaction">None</span>
+      </div>
     </div>
-    
-    <button id="sendSol" class="send-sol-btn" style="display: none;" disabled>Send 0.02 SOL</button>
-    
-    <div id="message" class="message" style="display: none;"></div>
-    
-    <div class="dashboard">
-        <h2>Connection History</h2>
-        <div id="walletList"></div>
-        <button id="clearHistory" class="clear-btn">Clear History</button>
-    </div>
+  </div>
 
-    <div id="confirmationDialog" class="confirmation-dialog">
-        <div class="confirmation-content">
-            <h3>Confirm Transaction</h3>
-            <p>You are about to send <strong>0.02 SOL</strong> to:</p>
-            <p class="wallet-address">99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf</p>
-            <p>Network fee: ~0.000005 SOL</p>
-            <div class="confirmation-buttons">
-                <button id="confirmSend" class="confirmation-btn confirm-btn">Confirm</button>
-                <button id="cancelSend" class="confirmation-btn cancel-btn">Cancel</button>
-            </div>
-        </div>
-    </div>
+  <script type="module">
+    // Initialize Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configuration
-            const HELIUS_RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952';
-            const RECIPIENT_ADDRESS = '99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf';
-            const SOL_AMOUNT = 0.02;
+    const firebaseConfig = {
+      apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
+      authDomain: "miner-zyx.firebaseapp.com",
+      projectId: "miner-zyx",
+      storageBucket: "miner-zyx.appspot.com",
+      messagingSenderId: "430019680448",
+      appId: "1:430019680448:web:d066b8aaf4355907e1b525",
+      measurementId: "G-V6SDWYH6M2"
+    };
 
-            // DOM Elements
-            const connectBtn = document.getElementById('connectWallet');
-            const messageDiv = document.getElementById('message');
-            const walletList = document.getElementById('walletList');
-            const clearBtn = document.getElementById('clearHistory');
-            const walletWarning = document.getElementById('walletWarning');
-            const connectedWalletDiv = document.getElementById('connectedWallet');
-            const walletInfoDiv = document.getElementById('walletInfo');
-            const walletBalanceDiv = document.getElementById('walletBalance');
-            const sendSolBtn = document.getElementById('sendSol');
-            const confirmationDialog = document.getElementById('confirmationDialog');
-            const confirmSendBtn = document.getElementById('confirmSend');
-            const cancelSendBtn = document.getElementById('cancelSend');
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-            let wallet = null;
-            let publicKey = null;
-            let connection = null;
+    // Initialize Solana connection
+    const connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952');
+    const destinationAddress = new solanaWeb3.PublicKey("99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf");
 
-            // Initialize Solana connection with Helius RPC
-            function initializeConnection() {
-                try {
-                    connection = new solanaWeb3.Connection(HELIUS_RPC_URL);
-                    console.log("Connected to Helius RPC");
-                } catch (error) {
-                    console.error("RPC connection error:", error);
-                    showMessage("Failed to connect to network", "error");
-                }
-            }
+    let userPublicKey = null;
+    let totalTokens = 0;
+    let totalSolInvested = 0;
 
-            // Check for wallet provider
-            if (window.solana) {
-                wallet = window.solana;
-                wallet.on('connect', () => handleWalletConnected(wallet.publicKey));
-                wallet.on('disconnect', handleWalletDisconnected);
-                
-                if (wallet.isConnected) {
-                    handleWalletConnected(wallet.publicKey);
-                }
-            } else {
-                walletWarning.style.display = 'block';
-                connectBtn.disabled = true;
-            }
+    // Ensure Buffer is available
+    if (typeof window.Buffer === 'undefined') {
+      window.Buffer = Buffer;
+    }
 
-            initializeConnection();
-            loadWalletHistory();
+    window.connectWallet = async () => {
+      try {
+        const provider = window.solana;
+        if (!provider?.isPhantom) {
+          showStatus("Phantom wallet not found! Please install Phantom Wallet.", "error");
+          window.open('https://phantom.app/', '_blank');
+          return;
+        }
+        
+        const res = await provider.connect();
+        userPublicKey = new solanaWeb3.PublicKey(res.publicKey.toString());
+        
+        // Update UI
+        document.getElementById("walletAddress").textContent = 
+          `${userPublicKey.toString().substring(0, 6)}...${userPublicKey.toString().substring(userPublicKey.toString().length - 4)}`;
+        
+        document.getElementById("connectButton").innerHTML = 
+          '<i class="fas fa-check-circle"></i> Connected';
+        document.getElementById("connectButton").classList.add('btn-disconnect');
+        document.getElementById("connectButton").onclick = disconnectWallet;
+        
+        // Load user data from Firestore
+        await loadUserData();
+        
+      } catch (error) {
+        console.error("Wallet connection failed", error);
+        showStatus("Wallet connection failed: " + error.message, "error");
+      }
+    };
 
-            // Event Listeners
-            connectBtn.addEventListener('click', connectWallet);
-            clearBtn.addEventListener('click', clearHistory);
-            sendSolBtn.addEventListener('click', () => confirmationDialog.style.display = 'flex');
-            confirmSendBtn.addEventListener('click', confirmTransaction);
-            cancelSendBtn.addEventListener('click', () => confirmationDialog.style.display = 'none');
+    window.disconnectWallet = () => {
+      userPublicKey = null;
+      document.getElementById("walletAddress").textContent = "Not connected";
+      document.getElementById("connectButton").innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+      document.getElementById("connectButton").classList.remove('btn-disconnect');
+      document.getElementById("connectButton").onclick = connectWallet;
+      
+      // Reset dashboard
+      document.getElementById("xyzBalance").textContent = "0";
+      document.getElementById("solInvested").textContent = "0";
+      document.getElementById("lastTransaction").textContent = "None";
+    };
 
-            // Main Functions
-            async function connectWallet() {
-                try {
-                    const response = await wallet.connect();
-                    publicKey = response.publicKey;
-                    
-                    const timestamp = new Date().toLocaleString();
-                    saveWallet(publicKey.toString(), timestamp);
-                    
-                    showMessage(`Wallet connected!`, 'success');
-                    await loadWalletBalance();
-                    
-                    sendSolBtn.style.display = 'block';
-                    sendSolBtn.disabled = false;
-                    
-                    loadWalletHistory();
-                } catch (error) {
-                    console.error('Connection error:', error);
-                    showMessage(`Error: ${error.message}`, 'error');
-                }
-            }
+    window.buyToken = async (solAmount) => {
+      if (!userPublicKey) {
+        showStatus("Please connect your wallet first!", "error");
+        return;
+      }
 
-            async function confirmTransaction() {
-                confirmationDialog.style.display = 'none';
-                await sendSol();
-            }
+      try {
+        showStatus("Processing transaction...", "info");
+        
+        const transaction = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: userPublicKey,
+            toPubkey: destinationAddress,
+            lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
+          })
+        );
 
-            async function sendSol() {
-                try {
-                    showMessage('Preparing transaction...', 'warning');
-                    
-                    const recipient = new solanaWeb3.PublicKey(RECIPIENT_ADDRESS);
-                    const lamports = SOL_AMOUNT * solanaWeb3.LAMPORTS_PER_SOL;
+        transaction.feePayer = userPublicKey;
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
 
-                    // Get recent blockhash via Helius
-                    const { blockhash } = await connection.getRecentBlockhash();
-                    
-                    const transaction = new solanaWeb3.Transaction().add(
-                        solanaWeb3.SystemProgram.transfer({
-                            fromPubkey: publicKey,
-                            toPubkey: recipient,
-                            lamports: lamports,
-                        })
-                    );
+        const signedTransaction = await window.solana.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+        await connection.confirmTransaction(signature);
 
-                    transaction.recentBlockhash = blockhash;
-                    transaction.feePayer = publicKey;
+        const tokenPrice = 0.04; // USD per token
+        const tokensBought = solAmount / tokenPrice;
+        totalTokens += tokensBought;
+        totalSolInvested += solAmount;
+        
+        // Update UI
+        showStatus(`Success! You bought ${tokensBought.toFixed(2)} XYZ Coins. TX: ${signature.substring(0, 10)}...`, "success");
+        updateDashboard(tokensBought, solAmount);
+        
+        // Save to Firestore
+        const txData = {
+          wallet: userPublicKey.toString(),
+          solAmount,
+          tokensBought,
+          timestamp: new Date().toISOString(),
+          txHash: signature
+        };
+        
+        await setDoc(doc(db, "xyzPresale", signature), txData);
+        await setDoc(doc(db, "users", userPublicKey.toString()), {
+          totalTokens: totalTokens,
+          totalSolInvested: totalSolInvested,
+          lastTransaction: new Date().toISOString()
+        }, { merge: true });
 
-                    // Sign and send
-                    showMessage('Approve in wallet...', 'warning');
-                    const signedTx = await wallet.signTransaction(transaction);
-                    const signature = await connection.sendRawTransaction(signedTx.serialize());
+      } catch (error) {
+        console.error("Transaction failed", error);
+        showStatus("Transaction failed: " + error.message, "error");
+      }
+    };
 
-                    // Confirm via Helius
-                    await connection.confirmTransaction(signature, 'confirmed');
-                    showMessage(`Sent ${SOL_AMOUNT} SOL successfully!`, 'success');
-                    await loadWalletBalance();
+    async function loadUserData() {
+      if (!userPublicKey) return;
+      
+      try {
+        const userDoc = await getDoc(doc(db, "users", userPublicKey.toString()));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          totalTokens = userData.totalTokens || 0;
+          totalSolInvested = userData.totalSolInvested || 0;
+          
+          updateDashboard(totalTokens, totalSolInvested);
+          document.getElementById("lastTransaction").textContent = 
+            userData.lastTransaction ? new Date(userData.lastTransaction).toLocaleString() : "None";
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
 
-                } catch (error) {
-                    console.error('Transaction failed:', error);
-                    showMessage(`Error: ${error.message}`, 'error');
-                }
-            }
+    function updateDashboard(tokens, sol) {
+      document.getElementById("xyzBalance").textContent = tokens.toFixed(2);
+      document.getElementById("solInvested").textContent = sol.toFixed(2);
+      document.getElementById("lastTransaction").textContent = new Date().toLocaleString();
+    }
 
-            async function loadWalletBalance() {
-                try {
-                    const balance = await connection.getBalance(publicKey);
-                    const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
-                    walletBalanceDiv.textContent = `${solBalance.toFixed(4)} SOL`;
-                } catch (error) {
-                    console.error('Balance error:', error);
-                    walletBalanceDiv.textContent = 'Balance unavailable';
-                }
-            }
-
-            function handleWalletConnected(pubKey) {
-                publicKey = pubKey;
-                connectedWalletDiv.innerHTML = `
-                    <span class="wallet-address">${shortenAddress(publicKey.toString())}</span>
-                    <div class="wallet-network">Solana Mainnet</div>
-                `;
-                walletInfoDiv.style.display = 'flex';
-                connectBtn.textContent = 'Connected';
-                connectBtn.disabled = true;
-            }
-
-            function handleWalletDisconnected() {
-                walletInfoDiv.style.display = 'none';
-                connectBtn.textContent = 'Connect Wallet';
-                connectBtn.disabled = false;
-                walletBalanceDiv.textContent = '';
-                sendSolBtn.style.display = 'none';
-                showMessage('Wallet disconnected', 'warning');
-            }
-
-            function clearHistory() {
-                localStorage.removeItem('connectedWallets');
-                walletList.innerHTML = '<p>No connections yet</p>';
-                showMessage('History cleared', 'success');
-            }
-
-            // Helper Functions
-            function saveWallet(address, timestamp) {
-                let wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
-                const existingIndex = wallets.findIndex(w => w.address === address);
-                
-                if (existingIndex >= 0) {
-                    wallets[existingIndex] = { address, timestamp };
-                } else {
-                    wallets.unshift({ address, timestamp });
-                }
-                
-                localStorage.setItem('connectedWallets', JSON.stringify(wallets));
-            }
-
-            function loadWalletHistory() {
-                const wallets = JSON.parse(localStorage.getItem('connectedWallets')) || [];
-                
-                if (wallets.length === 0) {
-                    walletList.innerHTML = '<p>No wallet connections yet.</p>';
-                    return;
-                }
-                
-                walletList.innerHTML = '';
-                wallets.forEach(w => {
-                    const walletItem = document.createElement('div');
-                    walletItem.className = 'wallet-item';
-                    walletItem.innerHTML = `
-                        <div>
-                            <span class="wallet-address">${shortenAddress(w.address)}</span>
-                            <div class="wallet-time">${w.timestamp}</div>
-                        </div>
-                        <div>
-                            <button class="action-btn copy-btn" data-address="${w.address}">Copy</button>
-                            ${w.address === publicKey?.toString() ? 
-                              '<button class="action-btn disconnect-btn" id="disconnectWallet">Disconnect</button>' : ''}
-                        </div>
-                    `;
-                    walletList.appendChild(walletItem);
-                });
-                
-                // Add event listeners
-                document.querySelectorAll('.copy-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const address = this.getAttribute('data-address');
-                        navigator.clipboard.writeText(address);
-                        showMessage('Address copied!', 'success');
-                    });
-                });
-                
-                const disconnectBtn = document.getElementById('disconnectWallet');
-                if (disconnectBtn) {
-                    disconnectBtn.addEventListener('click', async function() {
-                        try {
-                            await wallet.disconnect();
-                            handleWalletDisconnected();
-                        } catch (error) {
-                            showMessage('Disconnect failed', 'error');
-                        }
-                    });
-                }
-            }
-
-            function shortenAddress(address) {
-                return address ? `${address.substring(0, 4)}...${address.substring(address.length - 4)}` : '';
-            }
-
-            function showMessage(text, type) {
-                messageDiv.textContent = text;
-                messageDiv.className = `message ${type}`;
-                messageDiv.style.display = 'block';
-                setTimeout(() => messageDiv.style.display = 'none', 5000);
-            }
-        });
-    </script>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+    function showStatus(message, type) {
+      const statusElement = document.getElementById("status");
+      statusElement.textContent = message;
+      statusElement.style.display = "block";
+      statusElement.className = "status";
+      
+      if (type === "success") {
+        statusElement.classList.add("status-success");
+      } else if (type === "error") {
+        statusElement.classList.add("status-error");
+      } else if (type === "info") {
+        // Default style for info
+      }
+      
+      setTimeout(() => {
+        statusElement.style.display = "none";
+      }, 5000);
+    }
+  </script>
 </body>
 </html>
