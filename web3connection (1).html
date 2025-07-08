@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XYZ Coin Presale</title>
-  <!-- Buffer polyfill for Solana -->
-  <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
-  <!-- Solana Web3 -->
+  <!-- Solana Web3 (includes Buffer implementation) -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -252,11 +250,6 @@
   </div>
 
   <script>
-    // Ensure Buffer is available
-    if (typeof window.Buffer === 'undefined') {
-      window.Buffer = Buffer;
-    }
-
     // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
@@ -293,11 +286,11 @@
         const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
         const data = await response.json();
         solPriceUSD = data.solana.usd;
-        document.getElementById('solPrice').textContent = `$${solPriceUSD.toFixed(2)}`;
+        document.getElementById('solPrice').textContent = '$' + solPriceUSD.toFixed(2);
       } catch (error) {
         console.error("Error fetching SOL price:", error);
         solPriceUSD = 20; // Fallback price if API fails
-        document.getElementById('solPrice').textContent = `~$${solPriceUSD.toFixed(2)} (estimated)`;
+        document.getElementById('solPrice').textContent = '~$' + solPriceUSD.toFixed(2) + ' (estimated)';
       }
     }
     
@@ -319,7 +312,7 @@
     window.connectWallet = async () => {
       try {
         const provider = window.solana;
-        if (!provider?.isPhantom) {
+        if (!provider || !provider.isPhantom) {
           showStatus("Phantom wallet not found! Please install Phantom Wallet.", "error");
           window.open('https://phantom.app/', '_blank');
           return;
@@ -422,7 +415,7 @@
         await saveTransactionToFirestore(signature, solAmount, tokenAmount);
         await updateWalletAfterTransaction(solAmount, tokenAmount);
         
-        showStatus(`Success! Purchased ${tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0}) XYZ Tokens.`, "success");
+        showStatus("Success! Purchased " + tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0}) + " XYZ Tokens.", "success");
       } catch (error) {
         console.error("Transaction failed", error);
         showStatus("Transaction failed: " + error.message, "error");
@@ -529,7 +522,7 @@
     // Update wallet UI
     function updateWalletUI() {
       document.getElementById("walletAddress").textContent = 
-        `${userPublicKey.toString().substring(0, 6)}...${userPublicKey.toString().substring(userPublicKey.toString().length - 4)}`;
+        userPublicKey.toString().substring(0, 6) + "..." + userPublicKey.toString().substring(userPublicKey.toString().length - 4);
       
       document.getElementById("connectButton").innerHTML = '<i class="fas fa-check-circle"></i> Connected';
       document.getElementById("connectButton").classList.add('btn-disconnect');
