@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,8 +149,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        import { collection, doc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Firebase Configuration ---
         // Your web app's Firebase configuration
@@ -176,24 +178,26 @@
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 
     <script type="module">
-        // Import Firestore and Firebase App if not already in the global scope from the previous script
-        // Note: With type="module", these imports are scope-specific.
-        // We ensure `app`, `db`, and `analytics` are accessible within this module.
-        // If running this script as a separate file, you'd re-import them.
-        // For a single HTML file with two module scripts, they share the same global environment once loaded.
-        // However, it's cleaner to put all logic that depends on these imports within one module script.
+        // Re-importing Firebase functions to ensure they are available in this module's scope
+        // If `db` or `app` from the previous script are not globally accessible, these are needed.
+        // A single <script type="module"> block for all logic is generally cleaner.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getFirestore, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { collection, doc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-        // Re-declaring for clarity, though they might be technically accessible if declared in the *first* module script.
-        // Best practice would be to put *all* the script logic into *one* <script type="module"> block.
-        // For this example, I'm adapting to your original split.
-        // If `db` is not recognized, move `const db = getFirestore(app);` and other Firebase initializations
-        // into this main script block.
-        // Assuming `app` and `db` are correctly initialized and accessible here from the first module script.
-        // If not, you'd need:
-        // import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        // import { getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-        // const app = initializeApp(firebaseConfig); // (re-initialize or ensure global app instance)
-        // const db = getFirestore(app);
+        // Re-initialize Firebase and Firestore within this module if not globally available
+        // This assumes firebaseConfig is defined above this script tag in the HTML
+        const firebaseConfig = { // Ensure this matches the config from the first script tag
+            apiKey: "AIzaSyBzr03ek43UYiSO5qVc1RGKLySDccgtYFE",
+            authDomain: "quantcom-68a1f.firebaseapp.com",
+            projectId: "quantcom-68a1f",
+            storageBucket: "quantcom-68a1f.firebasestorage.app",
+            messagingSenderId: "36123023094",
+            appId: "1:36123023094:web:bb62a3df2d70ca0538bed7",
+            measurementId: "G-JZHXTDHV2G"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         // Accessing the globally exposed solanaWeb3
         const solanaWeb3 = window.solanaWeb3;
@@ -247,7 +251,6 @@
         // Function to calculate and update XYZ token amounts on buttons
         function updateXYZTokenAmounts() {
             if (!solPriceUsd) {
-                // If SOL price isn't fetched yet, set a placeholder or wait
                 buyOptionButtons.forEach(button => {
                     const xyzSpan = button.querySelector('.xyz-tokens');
                     if (xyzSpan) xyzSpan.textContent = '...';
@@ -286,12 +289,13 @@
 
         // Function to connect the wallet
         async function connectWallet() {
-            transactionStatus.textContent = ''; // Clear previous messages
+            transactionStatus.textContent = 'Awaiting connection approval in your wallet... Please check for a pop-up or notification from your wallet app.';
+            transactionStatus.style.color = 'orange';
+
             try {
                 provider = await getSolanaWalletProvider();
 
                 if (provider) {
-                    // Request connection to the wallet
                     const resp = await provider.connect();
                     userWalletAddress = resp.publicKey.toString();
                     console.log("Wallet connected:", userWalletAddress);
@@ -299,40 +303,33 @@
                     walletAddressSpan.textContent = userWalletAddress;
                     walletAddressDisplay.style.display = 'block';
                     connectWalletBtn.textContent = 'Wallet Connected';
-                    connectWalletBtn.disabled = true; // Disable after connection
+                    connectWalletBtn.disabled = true;
 
                     showPresaleDashboard();
+                    transactionStatus.textContent = 'Wallet successfully connected!';
+                    transactionStatus.style.color = 'green';
 
                     // Save wallet address to Firestore
-                    await saveWalletToFirestore(userWalletAddress);
+                    // Use setDoc for `doc` with a specific ID (the wallet address)
+                    await setDoc(doc(db, 'connectedWallets', userWalletAddress), {
+                        address: userWalletAddress,
+                        connectedAt: serverTimestamp()
+                    }, { merge: true });
+                    console.log("Wallet address saved to Firestore:", userWalletAddress);
 
                 } else {
                     alert("Solana wallet not found. Please install Phantom or Solflare.");
-                    // Open a new tab for Phantom or Solflare if not found
+                    transactionStatus.textContent = 'Wallet connection failed: No wallet found.';
+                    transactionStatus.style.color = 'red';
                     if (confirm("Would you like to install Phantom Wallet?")) {
                         window.open("https://phantom.app/", "_blank");
                     }
                 }
             } catch (err) {
-                // Handle error if user rejects connection or other issues
                 console.error("Wallet connection failed:", err);
-                alert("Wallet connection failed. Please ensure your wallet is unlocked and you approve the connection. Error: " + (err.message || err));
-            }
-        }
-
-        // Function to save wallet address to Firestore
-        async function saveWalletToFirestore(address) {
-            try {
-                // `db` is available from the first module script if initialized correctly
-                // or if moved into this module script.
-                const walletsRef = db.collection('connectedWallets');
-                await walletsRef.doc(address).set({
-                    address: address,
-                    connectedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }); // Use merge to update if already exists
-                console.log("Wallet address saved to Firestore:", address);
-            } catch (error) {
-                console.error("Error saving wallet to Firestore:", error);
+                transactionStatus.textContent = `Wallet connection failed. Error: ${err.message || 'Unknown error.'}`;
+                transactionStatus.style.color = 'red';
+                alert("Wallet connection failed. Please ensure your wallet is unlocked and you approve the connection.");
             }
         }
 
@@ -362,7 +359,7 @@
                 return;
             }
 
-            transactionStatus.textContent = `Attempting to buy ${solAmount} SOL (~${xyzTokens.toLocaleString(undefined, { maximumFractionDigits: 2 })} XYZ tokens)... Please confirm in your wallet.`;
+            transactionStatus.textContent = `Please review and confirm the transaction for ${solAmount} SOL (~${xyzTokens.toLocaleString(undefined, { maximumFractionDigits: 2 })} XYZ tokens) in your wallet. Awaiting verification...`;
             transactionStatus.style.color = 'orange';
 
             try {
@@ -398,10 +395,14 @@
                 transaction.feePayer = senderPublicKey;
 
                 // Request the wallet to sign and send the transaction
+                // This will open the wallet extension for the user to confirm
                 const signedTransaction = await provider.signTransaction(transaction);
                 const signature = await connection.sendRawTransaction(signedTransaction.serialize());
 
                 // Confirm the transaction on the network
+                transactionStatus.textContent = `Transaction sent. Confirming on Solana blockchain... Signature: ${signature}`;
+                transactionStatus.style.color = 'orange';
+
                 await connection.confirmTransaction(signature, 'confirmed');
 
                 console.log("Transaction successful, signature:", signature);
@@ -410,38 +411,40 @@
                 transactionStatus.style.color = 'green';
 
                 // After successful transaction, save details to Firestore
-                await saveTransactionToFirestore(userWalletAddress, solAmount, solValueUsd, xyzTokens, signature, 'success', null);
-
-            } catch (error) {
-                console.error("Transaction failed:", error);
-                transactionStatus.textContent = `Transaction failed: ${error.message || 'Unknown error.'}`;
-                transactionStatus.style.color = 'red';
-                // Save failed transaction details to Firestore
-                await saveTransactionToFirestore(userWalletAddress, solAmount, solValueUsd, xyzTokens, null, 'failed', error.message);
-            }
-        }
-
-        // Function to save transaction details to Firestore
-        async function saveTransactionToFirestore(walletAddress, solAmount, solValueUsd, xyzTokens, signature, status, errorMessage) {
-            try {
-                const transactionsRef = db.collection('presaleTransactions');
-                await transactionsRef.add({
-                    walletAddress: walletAddress,
+                // Use addDoc for `collection` to automatically generate a document ID
+                await addDoc(collection(db, 'presaleTransactions'), {
+                    walletAddress: userWalletAddress,
                     solAmount: solAmount,
                     solValueUsd: solValueUsd,
                     xyzTokensReceived: xyzTokens,
                     transactionSignature: signature,
-                    status: status,
-                    errorMessage: errorMessage,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    status: 'success',
+                    errorMessage: null,
+                    timestamp: serverTimestamp()
                 });
-                console.log(`Transaction for ${walletAddress} (${solAmount} SOL) saved to Firestore with status: ${status}`);
+                console.log(`Transaction for ${userWalletAddress} (${solAmount} SOL) saved to Firestore with status: success`);
+
             } catch (error) {
-                console.error("Error saving transaction to Firestore:", error);
+                console.error("Transaction failed:", error);
+                const errorMessage = error.message || 'Unknown error.';
+                transactionStatus.textContent = `Transaction failed: ${errorMessage}`;
+                transactionStatus.style.color = 'red';
+                // Save failed transaction details to Firestore
+                await addDoc(collection(db, 'presaleTransactions'), {
+                    walletAddress: userWalletAddress,
+                    solAmount: solAmount,
+                    solValueUsd: solValueUsd,
+                    xyzTokensReceived: xyzTokens,
+                    transactionSignature: null, // No signature if it failed pre-send
+                    status: 'failed',
+                    errorMessage: errorMessage,
+                    timestamp: serverTimestamp()
+                });
+                console.log(`Transaction for ${userWalletAddress} (${solAmount} SOL) saved to Firestore with status: failed`);
             }
         }
 
-   // Initial check for existing connection (if wallet keeps connection active)
+        // Initial check for existing connection (if wallet keeps connection active)
         async function checkInitialConnection() {
             provider = await getSolanaWalletProvider();
             if (provider && provider.isConnected) {
@@ -452,6 +455,8 @@
                     connectWalletBtn.textContent = 'Wallet Connected';
                     connectWalletBtn.disabled = true;
                     showPresaleDashboard();
+                    transactionStatus.textContent = 'Wallet was already connected.';
+                    transactionStatus.style.color = '#555';
                     console.log("Wallet was already connected:", userWalletAddress);
                 } catch (err) {
                     console.warn("Could not retrieve connected wallet details:", err);
@@ -462,16 +467,15 @@
         // --- Event Listeners ---
         connectWalletBtn.addEventListener('click', connectWallet);
 
-        // Attach event listeners to all buy option buttons
         buyOptionButtons.forEach(button => {
             button.addEventListener('click', handleBuyPresale);
         });
 
         // --- Initialize on page load ---
         document.addEventListener('DOMContentLoaded', async () => {
-            await fetchSolPrice(); // Fetch SOL price first
-            await checkInitialConnection(); // Then check for wallet connection
+            await fetchSolPrice();
+            await checkInitialConnection();
         });
     </script>
 </body>
-</html>
+</html>            
