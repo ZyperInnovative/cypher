@@ -21,8 +21,6 @@
       --light: #f1f1f1;
       --success: #4caf50;
       --danger: #f44336;
-      --warning: #ff9800;
-      --info: #2196f3;
     }
     
     body {
@@ -151,18 +149,6 @@
       display: block;
     }
     
-    .status-warning {
-      background-color: rgba(255, 152, 0, 0.2);
-      border: 1px solid var(--warning);
-      display: block;
-    }
-    
-    .status-info {
-      background-color: rgba(33, 150, 243, 0.2);
-      border: 1px solid var(--info);
-      display: block;
-    }
-    
     .dashboard {
       background: rgba(0, 0, 0, 0.2);
       padding: 1.5rem;
@@ -196,67 +182,12 @@
       width: 65%;
     }
     
-    .confirmation-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    
-    .confirmation-modal.active {
-      opacity: 1;
-      pointer-events: all;
-    }
-    
-    .confirmation-content {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      padding: 2rem;
-      border-radius: 15px;
-      max-width: 500px;
-      width: 90%;
-      border: 1px solid var(--primary);
-    }
-    
-    .confirmation-buttons {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 1.5rem;
-    }
-    
-    .confirmation-btn {
-      padding: 0.75rem 1.5rem;
+    .confirmation-message {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 1rem;
       border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    
-    .confirmation-btn-confirm {
-      background: var(--success);
-      color: white;
-    }
-    
-    .confirmation-btn-cancel {
-      background: var(--danger);
-      color: white;
-    }
-    
-    .verification-badge {
-      display: inline-block;
-      background: var(--success);
-      color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      margin-left: 0.5rem;
+      margin: 1rem 0;
+      text-align: center;
     }
     
     @media (max-width: 600px) {
@@ -267,10 +198,6 @@
       .amount-buttons {
         grid-template-columns: repeat(2, 1fr);
       }
-      
-      .confirmation-content {
-        padding: 1rem;
-      }
     }
   </style>
 </head>
@@ -278,7 +205,7 @@
   <div class="container">
     <header>
       <h1>XYZ Coin Presale</h1>
-      <p>Participate in the XYZ token presale with SOL</p>
+      <p>1 XYZ = $0.004 | Current SOL Price: <span id="solPrice">Loading...</span></p>
     </header>
     
     <div class="card">
@@ -296,18 +223,19 @@
       
       <h2 style="margin-bottom: 1rem;">Select Amount to Invest</h2>
       <div class="amount-buttons">
-        <button class="amount-btn" onclick="initiatePurchase(0.05)">0.05 SOL</button>
-        <button class="amount-btn" onclick="initiatePurchase(0.08)">0.08 SOL</button>
-        <button class="amount-btn" onclick="initiatePurchase(0.1)">0.1 SOL</button>
-        <button class="amount-btn" onclick="initiatePurchase(0.5)">0.5 SOL</button>
-        <button class="amount-btn" onclick="initiatePurchase(1.0)">1.0 SOL</button>
+        <button class="amount-btn" onclick="buyTokens(0.05)">0.05 SOL</button>
+        <button class="amount-btn" onclick="buyTokens(0.08)">0.08 SOL</button>
+        <button class="amount-btn" onclick="buyTokens(0.1)">0.1 SOL</button>
+        <button class="amount-btn" onclick="buyTokens(0.5)">0.5 SOL</button>
+        <button class="amount-btn" onclick="buyTokens(1.0)">1.0 SOL</button>
       </div>
       
+      <div id="confirmationMessage" class="confirmation-message" style="display: none;"></div>
       <div id="status" class="status"></div>
     </div>
     
     <div class="dashboard card">
-      <h3>Your XYZ Coin Holdings <span id="verificationBadge" class="verification-badge" style="display: none;">Verified</span></h3>
+      <h3>Your XYZ Coin Holdings</h3>
       <div class="dashboard-item">
         <span>XYZ Coins:</span>
         <span id="xyzBalance">0</span>
@@ -323,31 +251,12 @@
     </div>
   </div>
 
-  <!-- Confirmation Modal -->
-  <div class="confirmation-modal" id="confirmationModal">
-    <div class="confirmation-content">
-      <h2>Confirm Transaction</h2>
-      <p id="confirmationMessage">You are about to purchase XYZ tokens with <span id="confirmSolAmount">0</span> SOL</p>
-      <p>Estimated tokens: <span id="confirmTokenAmount">0</span> XYZ</p>
-      <div class="confirmation-buttons">
-        <button class="confirmation-btn confirmation-btn-cancel" onclick="cancelTransaction()">Cancel</button>
-        <button class="confirmation-btn confirmation-btn-confirm" onclick="confirmTransaction()">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Verification Modal -->
-  <div class="confirmation-modal" id="verificationModal">
-    <div class="confirmation-content">
-      <h2>Transaction Verification</h2>
-      <div id="verificationContent">
-        <p><i class="fas fa-spinner fa-spin"></i> Verifying transaction...</p>
-      </div>
-      <button class="confirmation-btn confirmation-btn-confirm" onclick="closeVerification()" style="display: none;" id="verificationCloseBtn">Close</button>
-    </div>
-  </div>
-
   <script>
+    // Ensure Buffer is available
+    if (typeof window.Buffer === 'undefined') {
+      window.Buffer = Buffer;
+    }
+
     // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
@@ -359,7 +268,6 @@
       measurementId: "G-V6SDWYH6M2"
     };
     
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     
@@ -367,29 +275,33 @@
     const connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952');
     const destinationAddress = new solanaWeb3.PublicKey("99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf");
     
-    // Ensure Buffer is available
-    if (typeof window.Buffer === 'undefined') {
-      window.Buffer = Buffer;
-    }
-    
     // App state
     let userPublicKey = null;
     let totalTokens = 0;
     let totalSolInvested = 0;
-    let currentPurchaseAmount = 0;
-    let currentTransactionSignature = null;
-    
-    // DOM Elements
-    const confirmationModal = document.getElementById('confirmationModal');
-    const verificationModal = document.getElementById('verificationModal');
-    const connectButton = document.getElementById('connectButton');
+    let solPriceUSD = 0;
     
     // Initialize the app
     document.addEventListener('DOMContentLoaded', () => {
+      fetchSolPrice();
       checkWalletConnection();
     });
     
-    // Check if wallet is already connected (e.g., page refresh)
+    // Fetch current SOL price in USD
+    async function fetchSolPrice() {
+      try {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+        const data = await response.json();
+        solPriceUSD = data.solana.usd;
+        document.getElementById('solPrice').textContent = `$${solPriceUSD.toFixed(2)}`;
+      } catch (error) {
+        console.error("Error fetching SOL price:", error);
+        solPriceUSD = 20; // Fallback price if API fails
+        document.getElementById('solPrice').textContent = `~$${solPriceUSD.toFixed(2)} (estimated)`;
+      }
+    }
+    
+    // Check if wallet is already connected
     async function checkWalletConnection() {
       if (window.solana && window.solana.isConnected) {
         try {
@@ -403,7 +315,7 @@
       }
     }
     
-    // Wallet connection handler
+    // Connect wallet handler
     window.connectWallet = async () => {
       try {
         const provider = window.solana;
@@ -437,126 +349,85 @@
       }
       userPublicKey = null;
       document.getElementById("walletAddress").textContent = "Not connected";
-      connectButton.innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
-      connectButton.classList.remove('btn-disconnect');
-      connectButton.onclick = connectWallet;
+      document.getElementById("connectButton").innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+      document.getElementById("connectButton").classList.remove('btn-disconnect');
+      document.getElementById("connectButton").onclick = connectWallet;
       
       // Reset dashboard
       document.getElementById("xyzBalance").textContent = "0";
       document.getElementById("solInvested").textContent = "0";
       document.getElementById("lastTransaction").textContent = "None";
-      document.getElementById("verificationBadge").style.display = "none";
     };
     
-    // Initiate purchase flow
-    window.initiatePurchase = (solAmount) => {
+    // Buy tokens handler
+    window.buyTokens = async (solAmount) => {
       if (!userPublicKey) {
         showStatus("Please connect your wallet first!", "error");
         return;
       }
       
-      currentPurchaseAmount = solAmount;
-      const tokenPrice = 0.04; // USD per token
-      const estimatedTokens = solAmount / tokenPrice;
+      if (solPriceUSD <= 0) {
+        showStatus("SOL price data not loaded yet. Please try again.", "error");
+        return;
+      }
       
-      document.getElementById("confirmSolAmount").textContent = solAmount;
-      document.getElementById("confirmTokenAmount").textContent = estimatedTokens.toFixed(2);
-      document.getElementById("confirmationMessage").textContent = 
-        `You are about to purchase XYZ tokens with ${solAmount} SOL`;
+      // Calculate USD value and token amount
+      const usdAmount = solAmount * solPriceUSD;
+      const tokenAmount = usdAmount / 0.004; // $0.004 per XYZ token
       
-      confirmationModal.classList.add('active');
+      // Show confirmation message
+      const confirmationElement = document.getElementById("confirmationMessage");
+      confirmationElement.innerHTML = `
+        <p>You are about to purchase:</p>
+        <p><strong>${tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0})} XYZ Tokens</strong></p>
+        <p>For ${solAmount} SOL ($${usdAmount.toFixed(2)})</p>
+        <p>Rate: $0.004 per XYZ</p>
+        <button class="btn" onclick="confirmPurchase(${solAmount}, ${tokenAmount})" style="margin-top: 10px;">
+          <i class="fas fa-check"></i> Confirm Purchase
+        </button>
+      `;
+      confirmationElement.style.display = "block";
     };
     
-    // Confirm transaction handler
-    window.confirmTransaction = async () => {
-      confirmationModal.classList.remove('active');
-      showVerificationModal();
+    // Confirm purchase handler
+    window.confirmPurchase = async (solAmount, tokenAmount) => {
+      document.getElementById("confirmationMessage").style.display = "none";
+      showStatus("Processing transaction...", "info");
       
       try {
-        const tokenPrice = 0.04; // USD per token
-        const tokensBought = currentPurchaseAmount / tokenPrice;
-        
-        // Create transaction
         const transaction = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: userPublicKey,
             toPubkey: destinationAddress,
-            lamports: solanaWeb3.LAMPORTS_PER_SOL * currentPurchaseAmount,
+            lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
           })
         );
         
-        // Set transaction parameters
         transaction.feePayer = userPublicKey;
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
         
-        // Sign and send transaction
-        updateVerificationMessage("Signing transaction...");
         const signedTransaction = await window.solana.signTransaction(transaction);
-        
-        updateVerificationMessage("Sending transaction to network...");
         const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-        currentTransactionSignature = signature;
-        
-        updateVerificationMessage("Waiting for confirmation...");
         await connection.confirmTransaction(signature);
         
         // Update local state
-        totalTokens += tokensBought;
-        totalSolInvested += currentPurchaseAmount;
+        totalTokens += tokenAmount;
+        totalSolInvested += solAmount;
         
         // Update UI
-        updateDashboard(tokensBought, currentPurchaseAmount);
-        document.getElementById("verificationBadge").style.display = "inline-block";
+        updateDashboard(totalTokens, totalSolInvested);
         
         // Save to Firestore
-        await saveTransactionToFirestore(signature, currentPurchaseAmount, tokensBought);
-        await updateWalletAfterTransaction(currentPurchaseAmount, tokensBought);
+        await saveTransactionToFirestore(signature, solAmount, tokenAmount);
+        await updateWalletAfterTransaction(solAmount, tokenAmount);
         
-        // Show success message
-        updateVerificationMessage(`
-          <i class="fas fa-check-circle" style="color: var(--success);"></i> 
-          Transaction confirmed!<br><br>
-          <small>TX: ${signature.substring(0, 10)}...${signature.substring(signature.length - 4)}</small>
-        `);
-        document.getElementById("verificationCloseBtn").style.display = "block";
-        
-        showStatus(`Success! You bought ${tokensBought.toFixed(2)} XYZ Coins.`, "success");
+        showStatus(`Success! Purchased ${tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0}) XYZ Tokens.`, "success");
       } catch (error) {
         console.error("Transaction failed", error);
-        updateVerificationMessage(`
-          <i class="fas fa-times-circle" style="color: var(--danger);"></i> 
-          Transaction failed!<br><br>
-          <small>${error.message}</small>
-        `);
-        document.getElementById("verificationCloseBtn").style.display = "block";
         showStatus("Transaction failed: " + error.message, "error");
       }
     };
-    
-    // Cancel transaction handler
-    window.cancelTransaction = () => {
-      confirmationModal.classList.remove('active');
-      showStatus("Transaction cancelled", "warning");
-    };
-    
-    // Close verification modal
-    window.closeVerification = () => {
-      verificationModal.classList.remove('active');
-    };
-    
-    // Show verification modal
-    function showVerificationModal() {
-      document.getElementById("verificationContent").innerHTML = 
-        '<p><i class="fas fa-spinner fa-spin"></i> Verifying transaction...</p>';
-      document.getElementById("verificationCloseBtn").style.display = "none";
-      verificationModal.classList.add('active');
-    }
-    
-    // Update verification message
-    function updateVerificationMessage(message) {
-      document.getElementById("verificationContent").innerHTML = message;
-    }
     
     // Save wallet to Firestore
     async function saveWalletToFirestore(publicKey, walletType = 'phantom') {
@@ -573,8 +444,7 @@
             connectionCount: 1,
             totalInvestedSOL: 0,
             totalTokensBought: 0,
-            transactions: [],
-            verified: false
+            transactions: []
           });
         } else {
           await walletRef.update({
@@ -588,15 +458,17 @@
     }
     
     // Save transaction to Firestore
-    async function saveTransactionToFirestore(signature, solAmount, tokensBought) {
+    async function saveTransactionToFirestore(signature, solAmount, tokenAmount) {
       try {
         const txData = {
           wallet: userPublicKey.toString(),
           solAmount: solAmount,
-          tokensBought: tokensBought,
+          tokensBought: tokenAmount,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           txHash: signature,
-          status: 'completed'
+          status: 'completed',
+          tokenPrice: 0.004,
+          solPriceUSD: solPriceUSD
         };
         
         // Save to transactions collection
@@ -607,24 +479,22 @@
         await walletRef.update({
           transactions: firebase.firestore.FieldValue.arrayUnion(signature),
           totalInvestedSOL: firebase.firestore.FieldValue.increment(solAmount),
-          totalTokensBought: firebase.firestore.FieldValue.increment(tokensBought),
-          lastTransaction: firebase.firestore.FieldValue.serverTimestamp(),
-          verified: true
+          totalTokensBought: firebase.firestore.FieldValue.increment(tokenAmount),
+          lastTransaction: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (error) {
         console.error("Error saving transaction to Firestore:", error);
       }
     }
     
-      // Update wallet after transaction
-    async function updateWalletAfterTransaction(solAmount, tokensBought) {
+    // Update wallet after transaction
+    async function updateWalletAfterTransaction(solAmount, tokenAmount) {
       try {
         const walletRef = db.collection("connectedWallets").doc(userPublicKey.toString());
         await walletRef.update({
           totalInvestedSOL: firebase.firestore.FieldValue.increment(solAmount),
-          totalTokensBought: firebase.firestore.FieldValue.increment(tokensBought),
-          lastTransaction: firebase.firestore.FieldValue.serverTimestamp(),
-          verified: true
+          totalTokensBought: firebase.firestore.FieldValue.increment(tokenAmount),
+          lastTransaction: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (error) {
         console.error("Error updating wallet after transaction:", error);
@@ -650,10 +520,6 @@
             const lastTxDate = walletData.lastTransaction.toDate();
             document.getElementById("lastTransaction").textContent = lastTxDate.toLocaleString();
           }
-          
-          if (walletData.verified) {
-            document.getElementById("verificationBadge").style.display = "inline-block";
-          }
         }
       } catch (error) {
         console.error("Error loading user data:", error);
@@ -665,14 +531,14 @@
       document.getElementById("walletAddress").textContent = 
         `${userPublicKey.toString().substring(0, 6)}...${userPublicKey.toString().substring(userPublicKey.toString().length - 4)}`;
       
-      connectButton.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
-      connectButton.classList.add('btn-disconnect');
-      connectButton.onclick = disconnectWallet;
+      document.getElementById("connectButton").innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+      document.getElementById("connectButton").classList.add('btn-disconnect');
+      document.getElementById("connectButton").onclick = disconnectWallet;
     }
     
     // Update dashboard
     function updateDashboard(tokens, sol) {
-      document.getElementById("xyzBalance").textContent = tokens.toFixed(2);
+      document.getElementById("xyzBalance").textContent = tokens.toLocaleString(undefined, {maximumFractionDigits: 0});
       document.getElementById("solInvested").textContent = sol.toFixed(2);
       document.getElementById("lastTransaction").textContent = new Date().toLocaleString();
     }
@@ -683,19 +549,12 @@
       statusElement.textContent = message;
       statusElement.className = "status";
       
-      switch(type) {
-        case "success":
-          statusElement.classList.add("status-success");
-          break;
-        case "error":
-          statusElement.classList.add("status-error");
-          break;
-        case "warning":
-          statusElement.classList.add("status-warning");
-          break;
-        case "info":
-          statusElement.classList.add("status-info");
-          break;
+      if (type === "success") {
+        statusElement.classList.add("status-success");
+      } else if (type === "error") {
+        statusElement.classList.add("status-error");
+      } else if (type === "info") {
+        // Default style for info
       }
       
       setTimeout(() => {
