@@ -352,35 +352,56 @@
       document.getElementById("lastTransaction").textContent = "None";
     };
     
-    // Buy tokens handler
-    window.buyTokens = async (solAmount) => {
-      if (!userPublicKey) {
-        showStatus("Please connect your wallet first!", "error");
+  // Confirm purchase button - UPDATED VERSION
+document.getElementById('confirmPurchaseBtn').addEventListener('click', async () => {
+    if (!walletAddress) {
+        alert('Please connect your wallet first.');
         return;
-      }
-      
-      if (solPriceUSD <= 0) {
-        showStatus("SOL price data not loaded yet. Please try again.", "error");
+    }
+    
+    if (selectedAmount <= 0) {
+        alert('Please select a presale amount first.');
         return;
-      }
-      
-      // Calculate USD value and token amount
-      const usdAmount = solAmount * solPriceUSD;
-      const tokenAmount = usdAmount / 0.004; // $0.004 per XYZ token
-      
-      // Show confirmation message
-      const confirmationElement = document.getElementById("confirmationMessage");
-      confirmationElement.innerHTML = `
-        <p>You are about to purchase:</p>
-        <p><strong>${tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0})} XYZ Tokens</strong></p>
-        <p>For ${solAmount} SOL ($${usdAmount.toFixed(2)})</p>
-        <p>Rate: $0.004 per XYZ</p>
-        <button class="btn" onclick="confirmPurchase(${solAmount}, ${tokenAmount})" style="margin-top: 10px;">
-          <i class="fas fa-check"></i> Confirm Purchase
-        </button>
-      `;
-      confirmationElement.style.display = "block";
-    };
+    }
+
+    try {
+        // Create transaction
+        const connection = new solanaWeb3.Connection(solanaRpcUrl);
+        const transaction = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+                fromPubkey: new solanaWeb3.PublicKey(walletAddress),
+                toPubkey: new solanaWeb3.PublicKey(presaleWalletAddress),
+                lamports: selectedAmount * solanaWeb3.LAMPORTS_PER_SOL
+            })
+        );
+
+        // Set recent blockhash
+        const { blockhash } = await connection.getRecentBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = new solanaWeb3.PublicKey(walletAddress);
+
+        // This triggers the wallet confirmation
+        const { signature } = await window.solana.signAndSendTransaction(transaction);
+
+        // Save to Firestore
+        const tokenAmount = selectedAmount / tokenPrice;
+        await saveTransactionToFirestore(walletAddress, selectedAmount, tokenAmount, signature);
+
+        // Show success
+        document.getElementById('successTokens').textContent = tokenAmount.toFixed(2);
+        document.getElementById('transactionId').textContent = 
+            `${signature.substring(0, 10)}...${signature.substring(signature.length - 10)}`;
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+
+        // Reload transaction history
+        loadTransactionHistory(walletAddress);
+
+    } catch (error) {
+        console.error('Transaction failed:', error);
+        alert('Transaction failed: ' + error.message);
+    }
+});
     
     // Confirm purchase handler
     window.confirmPurchase = async (solAmount, tokenAmount) => {
