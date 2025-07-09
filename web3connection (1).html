@@ -367,6 +367,116 @@
                 font-size: 0.95em;
                 padding: 15px;
             }
+            /* Modal Overlay */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    display: flex; /* Use flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    -webkit-animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Modal Content/Box */
+.modal-content {
+    background-color: #fff; /* White background for the box */
+    margin: auto; /* Auto margin for centering (fallback) */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    max-width: 500px; /* Max width of the modal */
+    width: 90%; /* Responsive width */
+    text-align: center;
+    position: relative; /* For absolute positioning of close button */
+    -webkit-animation: slideIn 0.3s ease-out;
+    animation: slideIn 0.3s ease-out;
+    color: #333; /* Darker text for readability */
+}
+
+/* Close Button */
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+/* Message Paragraph */
+#customAlertMessage {
+    font-size: 18px;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Buttons Container */
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between buttons */
+    margin-top: 20px;
+}
+
+/* Confirm Button (OK) */
+#customAlertConfirmButton {
+    background-color: #007bff; /* Primary blue for action */
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#customAlertConfirmButton:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+/* Animations */
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@-webkit-keyframes slideIn {
+    from {-webkit-transform: translateY(-50px); opacity: 0;}
+    to {-webkit-transform: translateY(0); opacity: 1;}
+}
+
+@keyframes slideIn {
+    from {transform: translateY(-50px); opacity: 0;}
+    to {transform: translateY(0); opacity: 1;}
+}
+
+/* Hide modal when not active */
+.modal:not(.active) {
+    display: none;
+}
+
         }
     </style>
 </head>
@@ -418,6 +528,16 @@
             </div>
             <div id="transaction-status"></div>
         </div>
+<div id="customAlertModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <p id="customAlertMessage"></p>
+        <div class="modal-buttons">
+            <button id="customAlertConfirmButton">OK</button>
+        </div>
+    </div>
+</div>
+
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -675,6 +795,68 @@
             transactionStatusDiv.style.display = 'block';
             transactionStatusDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll to message
         }
+            document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('customAlertModal');
+    const messageElement = document.getElementById('customAlertMessage');
+    const confirmButton = document.getElementById('customAlertConfirmButton');
+    const closeButton = document.querySelector('.close-button');
+
+    let currentResolve; // To hold the promise resolve function for the current alert
+
+    // Store the original alert function (though we won't typically call it)
+    const originalAlert = window.alert; 
+
+    // Function to show the custom alert modal
+    function showCustomAlert(message) {
+        return new Promise((resolve) => {
+            messageElement.textContent = message;
+            modal.classList.add('active'); // Add 'active' class to show modal
+            currentResolve = resolve; // Store the resolve function
+        });
+    }
+
+    // Function to hide the custom alert modal
+    function hideCustomAlert() {
+        modal.classList.remove('active'); // Remove 'active' class to hide modal
+        if (currentResolve) {
+            currentResolve(true); // Resolve the promise when confirmed
+            currentResolve = null; // Clear the resolve function
+        }
+    }
+
+    // Event listeners to close the modal
+    confirmButton.addEventListener('click', hideCustomAlert);
+    closeButton.addEventListener('click', hideCustomAlert);
+
+    // Close modal if user clicks outside of the modal content
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            hideCustomAlert();
+        }
+    });
+
+    // Close modal if Escape key is pressed
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.classList.contains('active')) {
+            hideCustomAlert();
+        }
+    });
+
+    // *** Override window.alert ***
+    window.alert = function(message) {
+        return showCustomAlert(message);
+    };
+
+    // You can optionally override window.confirm and window.prompt similarly
+    // For confirm: you'd need two buttons (OK/Cancel) and resolve true/false based on click.
+    // For prompt: you'd need an input field and resolve with the input value or null.
+
+    // Example usage (these will now trigger your custom modal):
+    // alert("Hello from the overridden alert!");
+    // setTimeout(() => {
+    //     alert("This alert appeared after a delay!");
+    // }, 1000);
+});
 
     </script>
 </body>
