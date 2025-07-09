@@ -3,556 +3,679 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XYZ Token Presale</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.70.0/lib/index.iife.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <title>XYZ Coin Presale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root {
-            --primary-color: #6e44ff;
-            --secondary-color: #00d4ff;
-            --dark-bg: #0f0f1a;
-            --dark-card: #1a1a2e;
-            --dark-text: #e2e2e2;
-            --light-bg: #f8f9fa;
-            --light-card: #ffffff;
-            --light-text: #333333;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-        }
-
+        /* Base styles from your provided neumorphic design */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .dark-theme {
-            background-color: var(--dark-bg);
-            color: var(--dark-text);
-        }
-
-        .light-theme {
-            background-color: var(--light-bg);
-            color: var(--light-text);
-        }
-
-        .dark-card {
-            background-color: var(--dark-card);
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .light-card {
-            background-color: var(--light-card);
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-primary-custom {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            color: white;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(110, 68, 255, 0.4);
-        }
-
-        .theme-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
-            align-items: center;
             justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
         }
 
-        .dark-theme .theme-toggle {
-            background-color: var(--dark-card);
-            color: var(--dark-text);
+        /* Light Theme */
+        body.light-theme {
+            background: #e0e5ec;
+            color: #333;
+        }
+        body.light-theme .container {
+            background: #e0e5ec;
+            box-shadow: 10px 10px 30px #c2c8d0, -10px -10px 30px #ffffff;
+        }
+        body.light-theme .header-actions button {
+            background: #e0e5ec;
+            box-shadow: 6px 6px 10px #c2c8d0, -6px -6px 10px #ffffff;
+        }
+        body.light-theme .header-actions button:hover {
+            background: #d6dce4;
+        }
+        body.light-theme .tabs button.active {
+            background: #d1d9e6;
+            box-shadow: inset 2px 2px 5px #bec4cb, inset -2px -2px 5px #f0f5fa;
+        }
+        body.light-theme input,
+        body.light-theme .btn,
+        body.light-theme .price-card {
+            background: #e0e5ec;
+            box-shadow: inset 4px 4px 6px #c8ccd1, inset -4px -4px 6px #f0f5fa; /* Input shadow */
+        }
+        body.light-theme .btn,
+        body.light-theme .price-card {
+            box-shadow: 6px 6px 10px #c2c8d0, -6px -6px 10px #ffffff; /* Button and card shadow */
+        }
+        body.light-theme .btn:hover,
+        body.light-theme .price-card:hover {
+            background: #d6dce4;
+        }
+        body.light-theme .or {
+            color: #666;
+        }
+        body.light-theme .social {
+            background: #e0e5ec;
+            box-shadow: 6px 6px 10px #c2c8d0, -6px -6px 10px #ffffff;
+        }
+        body.light-theme .social:hover {
+            background: #d6dce4;
         }
 
-        .light-theme .theme-toggle {
-            background-color: var(--light-card);
-            color: var(--light-text);
+
+        /* Dark Theme */
+        body.dark-theme {
+            background: #2c2f33;
+            color: #e0e0e0;
+        }
+        body.dark-theme .container {
+            background: #2c2f33;
+            box-shadow: 10px 10px 30px #232528, -10px -10px 30px #35393f;
+        }
+        body.dark-theme .header-actions button {
+            background: #2c2f33;
+            box-shadow: 6px 6px 10px #232528, -6px -6px 10px #35393f;
+        }
+        body.dark-theme .header-actions button:hover {
+            background: #36393f;
+        }
+        body.dark-theme .tabs button.active {
+            background: #36393f;
+            box-shadow: inset 2px 2px 5px #2a2d30, inset -2px -2px 5px #42454a;
+        }
+        body.dark-theme input,
+        body.dark-theme .btn,
+        body.dark-theme .price-card {
+            background: #2c2f33;
+            box-shadow: inset 4px 4px 6px #24272a, inset -4px -4px 6px #34373d; /* Input shadow */
+        }
+        body.dark-theme .btn,
+        body.dark-theme .price-card {
+            box-shadow: 6px 6px 10px #232528, -6px -6px 10px #35393f; /* Button and card shadow */
+        }
+        body.dark-theme .btn:hover,
+        body.dark-theme .price-card:hover {
+            background: #36393f;
+        }
+        body.dark-theme .or {
+            color: #a0a0a0;
+        }
+        body.dark-theme .social {
+            background: #2c2f33;
+            box-shadow: 6px 6px 10px #232528, -6px -6px 10px #35393f;
+        }
+        body.dark-theme .social:hover {
+            background: #36393f;
         }
 
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.8rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
-        .presale-option {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .presale-option:hover {
-            transform: translateY(-5px);
-        }
-
-        .presale-option.selected {
-            border: 2px solid var(--primary-color);
-        }
-
-        .progress-bar {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        }
-
-        .token-stats {
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .dark-theme .token-stats {
-            background-color: rgba(30, 30, 50, 0.7);
-        }
-
-        .light-theme .token-stats {
-            background-color: rgba(240, 240, 250, 0.9);
-        }
-
-        .wallet-connected {
-            background-color: var(--success-color);
-            color: white;
+        /* Common Styles (apply to both themes) */
+        .container {
+            padding: 40px; /* Increased padding */
             border-radius: 20px;
-            padding: 5px 15px;
-            font-size: 0.9rem;
+            width: 95%; /* Wider on smaller screens */
+            max-width: 600px; /* Max width for larger screens */
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Spacing between main sections */
+            min-height: 450px; /* Ensure a minimum height for consistent look */
         }
 
-        .glass-effect {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        .header-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px; /* Spacing between buttons */
+            z-index: 10; /* Ensure they are on top */
         }
 
-        .countdown {
-            font-size: 1.5rem;
+        .header-actions button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
             font-weight: bold;
-            letter-spacing: 2px;
+            transition: 0.3s;
+            font-size: 0.95em;
         }
 
-        @media (max-width: 768px) {
-            .navbar-brand {
-                font-size: 1.5rem;
+        .main-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 30px; /* Space for buttons above */
+        }
+
+        .main-header h1 {
+            margin: 0;
+            font-size: 2.2em; /* Larger title */
+            letter-spacing: 1px;
+        }
+        .main-header p {
+            font-size: 1.1em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        /* Section transitions */
+        .form-section {
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: translateY(20px);
+            flex-grow: 1; /* Allows sections to take available space */
+        }
+
+        .form-section.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .welcome-content {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .welcome-content p {
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+
+        .btn {
+            margin-top: 20px; /* More spacing */
+            padding: 15px; /* Larger buttons */
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 100%;
+            font-size: 1.1em;
+        }
+
+        .or {
+            text-align: center;
+            margin: 25px 0 20px; /* More vertical space */
+            font-size: 0.95em;
+            opacity: 0.7;
+        }
+
+        .socials {
+            display: flex;
+            justify-content: center; /* Center social icons */
+            gap: 20px; /* Spacing between social icons */
+        }
+
+        .social {
+            width: 48px; /* Slightly larger touch target */
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .social:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Presale Dashboard Specific Styles */
+        #presale-dashboard {
+            align-items: center; /* Center items in dashboard */
+            text-align: center;
+        }
+
+        .wallet-info {
+            margin-bottom: 25px; /* More spacing */
+            font-size: 1em;
+            padding: 15px; /* Larger padding */
+            border-radius: 12px;
+            word-break: break-all;
+            line-height: 1.5;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.7);
+        }
+        body.dark-theme .wallet-info {
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3), inset -2px -2px 5px rgba(255,255,255,0.05);
+        }
+
+        #presale-dashboard h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+        }
+
+        .price-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Adjusted min-width for better fit */
+            gap: 20px; /* Increased gap */
+            width: 100%; /* Ensure it takes full width */
+            max-width: 500px; /* Keep it constrained on very wide screens */
+            margin: 0 auto; /* Center the grid */
+        }
+
+        .price-card {
+            padding: 25px; /* Increased padding */
+            border-radius: 18px; /* Slightly more rounded */
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            position: relative;
+            font-weight: bold;
+            font-size: 1.2em; /* Larger text */
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Spacing inside card */
+            align-items: center;
+            justify-content: center; /* Vertically center content */
+            min-height: 100px; /* Ensure consistent card height */
+        }
+
+        .price-card:hover {
+            transform: translateY(-5px); /* More pronounced lift */
+        }
+
+        .price-card span {
+            font-size: 0.9em;
+            opacity: 0.8;
+            font-weight: normal; /* Make XYZ amount less bold */
+        }
+
+        #transaction-status {
+            margin-top: 30px; /* More spacing */
+            padding: 20px; /* Larger padding */
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            font-size: 1.05em;
+            line-height: 1.4;
+            max-width: 400px; /* Constrain width */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #transaction-status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        #transaction-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        body.dark-theme #transaction-status.success {
+            background-color: #1e3a24;
+            color: #a4e5af;
+            border: 1px solid #2d4f33;
+        }
+        body.dark-theme #transaction-status.error {
+            background-color: #4f1e24;
+            color: #e5a4af;
+            border: 1px solid #5f2d33;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px; /* Smaller padding on very small screens */
+            }
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 5px; /* Tighter spacing for vertical stack */
+                top: 15px;
+                right: 15px;
+            }
+            .header-actions button {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+            .main-header h1 {
+                font-size: 1.8em;
+                padding-top: 0; /* Adjust header padding since buttons are higher */
+            }
+            .welcome-content p {
+                font-size: 1em;
+            }
+            .social {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1em;
+            }
+            .price-card {
+                padding: 20px;
+                font-size: 1.1em;
+            }
+            #presale-dashboard h2 {
+                font-size: 1.4em;
+            }
+            .wallet-info {
+                font-size: 0.85em;
+                padding: 12px;
+            }
+            #transaction-status {
+                font-size: 0.95em;
+                padding: 15px;
             }
         }
     </style>
 </head>
-<body class="dark-theme">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4 glass-effect">
-        <div class="container">
-            <a class="navbar-brand" href="#">XYZ PRESALE</a>
-            <div class="ms-auto">
-                <button id="connectWalletBtn" class="btn btn-primary-custom">
-                    <i class="fas fa-wallet me-2"></i>Connect Wallet
-                </button>
-                <div id="walletInfo" class="wallet-connected d-none">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <span id="walletAddress"></span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
+<body class="light-theme">
     <div class="container">
-        <div class="row">
-            <!-- Left Column -->
-            <div class="col-lg-8 mb-4">
-                <div class="card dark-card p-4 mb-4">
-                    <h2 class="mb-4"><i class="fas fa-coins me-2"></i>XYZ Token Presale</h2>
-                    <p>Welcome to the XYZ Token presale! Participate in our token sale and get early access to XYZ tokens at a discounted price.</p>
-                    
-                    <div class="token-stats mb-4">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-fire me-3" style="font-size: 2rem;"></i>
-                                    <div>
-                                        <h5 class="mb-0">Token Price</h5>
-                                        <h3 class="mb-0">0.004 SOL</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-chart-line me-3" style="font-size: 2rem;"></i>
-                                    <div>
-                                        <h5 class="mb-0">Presale Progress</h5>
-                                        <div class="progress mt-2" style="height: 10px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <small>65% of 500,000 SOL raised</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="header-actions">
+            <button id="theme-toggle">☀️ Light</button>
+            <button id="connect-wallet-btn">Connect Wallet</button>
+        </div>
 
-                    <div id="presaleDashboard" class="d-none">
-                        <h4 class="mb-3">Select Presale Amount</h4>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <div class="card dark-card presale-option p-3 text-center" data-amount="0.05">
-                                    <h3>0.05 SOL</h3>
-                                    <p class="mb-2">12.5 XYZ</p>
-                                    <button class="btn btn-primary-custom btn-sm">Select</button>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="card dark-card presale-option p-3 text-center" data-amount="0.08">
-                                    <h3>0.08 SOL</h3>
-                                    <p class="mb-2">20 XYZ</p>
-                                    <button class="btn btn-primary-custom btn-sm">Select</button>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="card dark-card presale-option p-3 text-center" data-amount="0.1">
-                                    <h3>0.1 SOL</h3>
-                                    <p class="mb-2">25 XYZ</p>
-                                    <button class="btn btn-primary-custom btn-sm">Select</button>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="card dark-card presale-option p-3 text-center" data-amount="0.5">
-                                    <h3>0.5 SOL</h3>
-                                    <p class="mb-2">125 XYZ</p>
-                                    <button class="btn btn-primary-custom btn-sm">Select</button>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="card dark-card presale-option p-3 text-center" data-amount="1">
-                                    <h3>1 SOL</h3>
-                                    <p class="mb-2">250 XYZ</p>
-                                    <button class="btn btn-primary-custom btn-sm">Select</button>
-                                </div>
-                            </div>
-                        </div>
+        <div class="main-header">
+            <h1>XYZ Presale</h1>
+            <p>Your Gateway to the Future of Finance</p>
+        </div>
 
-                        <div id="selectedOption" class="card dark-card p-4 mt-3 d-none">
-                            <h4 class="mb-3">Confirm Your Purchase</h4>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p><strong>Amount to Send:</strong> <span id="selectedAmount">0</span> SOL</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>You Receive:</strong> <span id="tokenAmount">0</span> XYZ</p>
-                                </div>
-                            </div>
-                            <button id="confirmPurchaseBtn" class="btn btn-primary-custom w-100">
-                                <i class="fas fa-paper-plane me-2"></i>Confirm & Send Transaction
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="walletNotConnected" class="text-center py-5">
-                        <i class="fas fa-wallet mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
-                        <h4>Wallet Not Connected</h4>
-                        <p>Please connect your Solana wallet to participate in the presale.</p>
-                        <button id="connectWalletBtn2" class="btn btn-primary-custom">
-                            <i class="fas fa-wallet me-2"></i>Connect Wallet
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div class="col-lg-4 mb-4">
-                <div class="card dark-card p-4 mb-4">
-                    <h4 class="mb-3"><i class="fas fa-info-circle me-2"></i>Presale Details</h4>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Token: XYZ</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Price: 0.004 SOL per XYZ</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Min Purchase: 0.05 SOL</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Max Purchase: 100 SOL</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Hard Cap: 500,000 SOL</li>
-                    </ul>
-                </div>
-
-                <div class="card dark-card p-4 mb-4">
-                    <h4 class="mb-3"><i class="fas fa-history me-2"></i>Transaction History</h4>
-                    <div id="transactionHistory" class="small">
-                        <p class="text-muted">No transactions yet. Connect your wallet to see your history.</p>
-                    </div>
-                </div>
-
-                <div class="card dark-card p-4">
-                    <h4 class="mb-3"><i class="fas fa-clock me-2"></i>Presale Countdown</h4>
-                    <div class="countdown text-center">
-                        <div id="countdown">
-                            <div class="d-flex justify-content-center">
-                                <div class="mx-2">
-                                    <div class="fs-1" id="days">00</div>
-                                    <div class="fs-6">Days</div>
-                                </div>
-                                <div class="mx-2">
-                                    <div class="fs-1" id="hours">00</div>
-                                    <div class="fs-6">Hours</div>
-                                </div>
-                                <div class="mx-2">
-                                    <div class="fs-1" id="minutes">00</div>
-                                    <div class="fs-6">Minutes</div>
-                                </div>
-                                <div class="mx-2">
-                                    <div class="fs-1" id="seconds">00</div>
-                                    <div class="fs-6">Seconds</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div id="welcome-section" class="form-section active">
+            <div class="welcome-content">
+                <p>Connect your Solana wallet to securely participate in the XYZ Coin Presale and unlock exclusive benefits!</p>
+                <p class="or">Or explore our community channels</p>
+                <div class="socials">
+                    <button class="social"><i class="fab fa-twitter"></i></button>
+                    <button class="social"><i class="fab fa-telegram-plane"></i></button>
+                    <button class="social"><i class="fab fa-discord"></i></button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Theme Toggle -->
-    <div class="theme-toggle" id="themeToggle">
-        <i class="fas fa-moon" id="themeIcon"></i>
-    </div>
-
-    <!-- Success Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content dark-card">
-                <div class="modal-header border-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div id="presale-dashboard" class="form-section">
+            <div class="wallet-info">
+                <strong>Connected Wallet:</strong> <span id="connected-wallet-address">Not Connected</span>
+            </div>
+            <h2>Choose Presale Amount</h2>
+            <div class="price-options">
+                <div class="price-card" data-sol="0.05">
+                    0.05 SOL<br><span>~ <span class="xyz-amount">...</span> XYZ</span>
                 </div>
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
-                    <h3>Transaction Successful!</h3>
-                    <p class="mb-0">Your purchase of <span id="successTokens">0</span> XYZ tokens has been confirmed.</p>
-                    <p>Transaction ID: <span id="transactionId" class="small text-muted">Loading...</span></p>
+                <div class="price-card" data-sol="0.08">
+                    0.08 SOL<br><span>~ <span class="xyz-amount">...</span> XYZ</span>
                 </div>
-                <div class="modal-footer border-0 justify-content-center">
-                    <button type="button" class="btn btn-primary-custom" data-bs-dismiss="modal">Close</button>
+                <div class="price-card" data-sol="0.1">
+                    0.1 SOL<br><span>~ <span class="xyz-amount">...</span> XYZ</span>
+                </div>
+                <div class="price-card" data-sol="0.5">
+                    0.5 SOL<br><span>~ <span class="xyz-amount">...</span> XYZ</span>
+                </div>
+                <div class="price-card" data-sol="1">
+                    1 SOL<br><span>~ <span class="xyz-amount">...</span> XYZ</span>
                 </div>
             </div>
+            <div id="transaction-status"></div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
     <script>
-        // Firebase configuration
+        // Initialize Firebase with your provided configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyDEXAMPLEEXAMPLEEXAMPLEEXAMPLE",
-            authDomain: "xyz-presale.firebaseapp.com",
-            projectId: "xyz-presale",
-            storageBucket: "xyz-presale.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abc123def456ghi789jkl0"
+            apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
+            authDomain: "miner-zyx.firebaseapp.com",
+            projectId: "miner-zyx",
+            storageBucket: "miner-zyx.appspot.com",
+            messagingSenderId: "430019680448",
+            appId: "1:430019680448:web:d066b8aaf4355907e1b525",
+            measurementId: "G-V6SDWYH6M2"
         };
 
-        // Initialize Firebase
+        // WARNING: Using these Firebase credentials directly in client-side code
+        // for write operations is INSECURE for a production application.
+        // Anyone can inspect your code and gain access to write to your Firestore database.
+        // This is provided ONLY because you explicitly requested to avoid a backend.
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Solana RPC configuration
-        const solanaRpcUrl = "https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952";
-        const presaleWalletAddress = "99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf";
-        const tokenPrice = 0.004; // 0.004 SOL per XYZ token
+        // Solana Configuration
+        const SOLANA_RPC_URL = "https://mainnet.helius-rpc.com/?api-key=ffa4267c-d28d-4bce-baf4-6cca12c26952";
+        const DESTINATION_ADDRESS = "99R4aBwwjXxeT9ukG2o1ppGE7GFEPqAWt94MvHhxoxgf";
+        const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, 'confirmed');
 
-        // Global variables
-        let walletAddress = null;
-        let selectedAmount = 0;
-        let connection = null;
+        // IMPORTANT: For accurate XYZ coin calculation, you NEED a real-time SOL to USD price.
+        // This fixed rate is for demonstration purposes only. In a production app,
+        // you would use a price oracle or a cryptocurrency exchange API to fetch this.
+        const FIXED_SOL_TO_USD_RATE = 150; // Example: 1 SOL = 150 USD.
+        const XYZ_COIN_PRICE_USD = 0.004; // Price of 1 XYZ coin in USD
 
-        // Initialize Solana connection
-        function initSolanaConnection() {
-            connection = new solanaWeb3.Connection(solanaRpcUrl);
-            console.log("Connected to Solana network");
-        }
+        // DOM Elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const welcomeSection = document.getElementById('welcome-section');
+        const presaleDashboard = document.getElementById('presale-dashboard');
+        const connectedWalletAddressSpan = document.getElementById('connected-wallet-address');
+        const priceCards = document.querySelectorAll('.price-card');
+        const transactionStatusDiv = document.getElementById('transaction-status');
 
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const body = document.body;
+        let userWalletAddress = null; // To store the connected wallet address
 
+        // Theme Toggle
         themeToggle.addEventListener('click', () => {
-            if (body.classList.contains('dark-theme')) {
-                body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-                
-                document.querySelectorAll('.dark-card').forEach(card => {
-                    card.classList.remove('dark-card');
-                    card.classList.add('light-card');
-                });
+            document.body.classList.toggle('dark-theme');
+            document.body.classList.toggle('light-theme');
+            if (document.body.classList.contains('dark-theme')) {
+                themeToggle.innerHTML = '🌙 Dark';
+                localStorage.setItem('theme', 'dark');
             } else {
-                body.classList.remove('light-theme');
-                body.classList.add('dark-theme');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-                
-                document.querySelectorAll('.light-card').forEach(card => {
-                    card.classList.remove('light-card');
-                    card.classList.add('dark-card');
-                });
+                themeToggle.innerHTML = '☀️ Light';
+                localStorage.setItem('theme', 'light');
             }
         });
 
-        // Countdown timer
-        function updateCountdown() {
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 7); // 7 days from now
-            
-            const now = new Date().getTime();
-            const distance = endDate - now;
-            
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
-            document.getElementById('days').textContent = days.toString().padStart(2, '0');
-            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
-            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
-            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
-            
-            if (distance < 0) {
-                clearInterval(countdownTimer);
-                document.getElementById('countdown').innerHTML = "PRESALE ENDED";
+        // Apply saved theme on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.classList.remove('light-theme', 'dark-theme'); // Remove existing
+            document.body.classList.add(savedTheme + '-theme');
+            if (savedTheme === 'dark') {
+                themeToggle.innerHTML = '🌙 Dark';
+            } else {
+                themeToggle.innerHTML = '☀️ Light';
+            }
+
+            // Calculate XYZ for each card on load
+            calculateAndDisplayXYZ();
+        });
+
+        // Function to calculate and display XYZ coin amount
+        function calculateAndDisplayXYZ() {
+            priceCards.forEach(card => {
+                const solAmount = parseFloat(card.dataset.sol);
+                const usdEquivalent = solAmount * FIXED_SOL_TO_USD_RATE;
+                const xyzAmount = usdEquivalent / XYZ_COIN_PRICE_USD;
+                card.querySelector('.xyz-amount').textContent = xyzAmount.toFixed(2);
+            });
+        }
+
+        // Connect Wallet Function (Solana Wallet Integration)
+        connectWalletBtn.addEventListener('click', async () => {
+            transactionStatusDiv.style.display = 'none'; // Hide previous status
+
+            if (userWalletAddress) {
+                alert('Wallet already connected: ' + userWalletAddress);
+                return;
+            }
+
+            try {
+                // Check if a Solana wallet (e.g., Phantom) is available
+                if (window.solana && window.solana.isPhantom) {
+                    // Request wallet connection. This will prompt the user in their wallet extension.
+                    const resp = await window.solana.connect();
+                    userWalletAddress = resp.publicKey.toString();
+                    connectedWalletAddressSpan.textContent = userWalletAddress;
+
+                    // Save wallet to Firestore
+                    await saveWalletToFirestore(userWalletAddress);
+
+                          // Show presale dashboard
+                    welcomeSection.classList.remove('active');
+                    presaleDashboard.classList.add('active');
+                    connectWalletBtn.textContent = 'Wallet Connected';
+                    connectWalletBtn.disabled = true; // Disable after successful connection
+
+                    alert('Wallet connected successfully! Address: ' + userWalletAddress);
+
+                } else {
+                    alert('Solana wallet (e.g., Phantom) not found. Please install a Solana wallet browser extension to proceed.');
+                    // Optionally provide a link to a popular wallet
+                    window.open('https://phantom.app/', '_blank');
+                }
+            } catch (err) {
+                console.error("Wallet connection failed:", err);
+                alert("Wallet connection failed. Please ensure your wallet is unlocked and try again. Error: " + err.message);
+            }
+        });
+
+        // Save Wallet to Firestore (Client-side - **Requires permissive Firestore rules**)
+        async function saveWalletToFirestore(walletAddress) {
+            try {
+                const walletsRef = db.collection('presaleWallets');
+                // Use the wallet address as the document ID for easy lookup
+                await walletsRef.doc(walletAddress).set({
+                    connectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'connected',
+                    lastConnection: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }); // Use merge: true to update existing document if wallet connects again
+
+                console.log("Wallet address saved/updated in Firestore:", walletAddress);
+            } catch (error) {
+                console.error("Error saving wallet to Firestore:", error);
+                alert("Failed to save wallet data in Firestore. Check console for details and ensure Firestore rules are set correctly.");
             }
         }
 
-        const countdownTimer = setInterval(updateCountdown, 1000);
-        updateCountdown();
 
-        // Connect Wallet Functionality
-        async function connectWallet() {
-            try {
-                if (!window.solana || !window.solana.isPhantom) {
-                    alert('Phantom wallet is not installed. Please install it from https://phantom.app/');
+        // Handle Presale Purchase Clicks
+        priceCards.forEach(card => {
+            card.addEventListener('click', async () => {
+                if (!userWalletAddress) {
+                    alert('Please connect your Solana wallet first to buy XYZ coins.');
                     return;
                 }
 
-                // Connect to the wallet
-                const response = await window.solana.connect();
-                walletAddress = response.publicKey.toString();
-                
-                 // Update UI
-                document.getElementById('selectedAmount').textContent = selectedAmount;
-                document.getElementById('tokenAmount').textContent = tokenAmount.toFixed(2);
-                document.getElementById('selectedOption').classList.remove('d-none');
+                transactionStatusDiv.style.display = 'none'; // Hide previous status
+
+                const solAmount = parseFloat(card.dataset.sol);
+                const xyzCalculatedAmount = parseFloat(card.querySelector('.xyz-amount').textContent);
+
+                // Step 1: Confirm with the user
+                const confirmation = confirm(
+                    `You are about to buy ${solAmount} SOL worth of XYZ Coin.\n` +
+                    `This will get you approximately ${xyzCalculatedAmount.toFixed(2)} XYZ coins.\n\n` +
+                    `Confirm to proceed with the transaction in your wallet.`
+                );
+
+                if (!confirmation) {
+                    console.log('Transaction cancelled by user.');
+                    displayTransactionStatus('Transaction cancelled.', 'error');
+                    return;
+                }
+
+                // Step 2: Initiate Solana Transaction
+                try {
+                    const fromWalletPublicKey = new solanaWeb3.PublicKey(userWalletAddress);
+                    const toWalletPublicKey = new solanaWeb3.PublicKey(DESTINATION_ADDRESS);
+
+                    // Convert SOL to lamports (1 SOL = 1,000,000,000 lamports)
+                    const lamports = solanaWeb3.LAMPORTS_PER_SOL * solAmount;
+
+                    let transaction = new solanaWeb3.Transaction().add(
+                        solanaWeb3.SystemProgram.transfer({
+                            fromPubkey: fromWalletPublicKey,
+                            toPubkey: toWalletPublicKey,
+                            lamports: lamports,
+                        })
+                    );
+
+                    // Get the latest blockhash for the transaction
+                    const { blockhash } = await connection.getLatestBlockhash();
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = fromWalletPublicKey;
+
+                    // Prompt the user to sign and send the transaction via their wallet extension
+                    // This is the "manual transaction in the app" part, as the wallet extension will pop up.
+                    const signedTransaction = await window.solana.signAndSendTransaction(transaction);
+
+                    // Wait for transaction confirmation
+                    // Using 'confirmed' commitment for better reliability
+                    const { value: status } = await connection.confirmTransaction({
+                        signature: signedTransaction.signature,
+                        blockhash: blockhash,
+                        lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight
+                    }, 'confirmed'); // Specify 'confirmed' for the commitment level
+
+                    if (status.err) {
+                        throw new Error('Transaction failed on blockchain: ' + JSON.stringify(status.err));
+                    }
+
+                    console.log('Transaction successful! Signature:', signedTransaction.signature);
+                    displayTransactionStatus('Transaction successful! You bought ' + xyzCalculatedAmount.toFixed(2) + ' XYZ coins.', 'success');
+
+                    // Step 3: Save Transaction Details to Firestore
+                    await saveTransactionToFirestore(userWalletAddress, solAmount, xyzCalculatedAmount, signedTransaction.signature);
+
+                } catch (error) {
+                    console.error("Solana transaction failed:", error);
+                    let errorMessage = "Solana transaction failed. ";
+                    if (error.message.includes('User rejected the request')) {
+                        errorMessage += "Transaction rejected by user in wallet.";
+                    } else if (error.message.includes('Insufficient funds')) {
+                        errorMessage += "Insufficient SOL balance in your wallet.";
+                    } else {
+                        errorMessage += error.message; // Show detailed error if not a common one
+                    }
+                    displayTransactionStatus(errorMessage, 'error');
+                }
             });
         });
 
-        // Confirm purchase button with wallet confirmation
-        document.getElementById('confirmPurchaseBtn').addEventListener('click', async () => {
-            if (!walletAddress) {
-                alert('Please connect your wallet first.');
-                return;
-            }
-            
-            if (selectedAmount <= 0) {
-                alert('Please select a presale amount first.');
-                return;
-            }
-
+        // Save Transaction Details to Firestore (Client-side - **Requires permissive Firestore rules**)
+        async function saveTransactionToFirestore(walletAddress, solAmount, xyzAmount, transactionSignature) {
             try {
-                // Create transaction
-                const connection = new solanaWeb3.Connection(solanaRpcUrl);
-                const transaction = new solanaWeb3.Transaction().add(
-                    solanaWeb3.SystemProgram.transfer({
-                        fromPubkey: new solanaWeb3.PublicKey(walletAddress),
-                        toPubkey: new solanaWeb3.PublicKey(presaleWalletAddress),
-                        lamports: selectedAmount * solanaWeb3.LAMPORTS_PER_SOL
-                    })
-                );
-
-                // Set recent blockhash and fee payer
-                transaction.feePayer = new solanaWeb3.PublicKey(walletAddress);
-                const { blockhash } = await connection.getRecentBlockhash();
-                transaction.recentBlockhash = blockhash;
-                
-                // Request signature from wallet (this triggers the wallet confirmation)
-                const { signature } = await window.solana.signAndSendTransaction(transaction);
-                
-                // Save transaction to Firestore
-                const tokenAmount = selectedAmount / tokenPrice;
-                await saveTransactionToFirestore(walletAddress, selectedAmount, tokenAmount, signature);
-                
-                // Show success modal
-                document.getElementById('successTokens').textContent = tokenAmount.toFixed(2);
-                document.getElementById('transactionId').textContent = `${signature.substring(0, 10)}...${signature.substring(signature.length - 10)}`;
-                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                successModal.show();
-                
-                // Reload transaction history
-                loadTransactionHistory(walletAddress);
-                
-                console.log('Transaction successful:', signature);
-            } catch (error) {
-                console.error('Transaction failed:', error);
-                alert('Transaction failed: ' + error.message);
-            }
-        });
-
-        // Save transaction to Firestore
-        async function saveTransactionToFirestore(walletAddress, amount, tokenAmount, transactionId) {
-            try {
-                const transactionRef = db.collection('transactions').doc(transactionId);
-                await transactionRef.set({
+                const transactionsRef = db.collection('presaleTransactions');
+                // Firestore automatically generates a document ID for `add()`
+                await transactionsRef.add({
                     walletAddress: walletAddress,
-                    amount: amount,
-                    tokenAmount: tokenAmount,
-                    tokenPrice: tokenPrice,
-                    transactionId: transactionId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    solAmount: solAmount,
+                    xyzAmount: xyzAmount,
+                    transactionSignature: transactionSignature,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'completed' // Assuming successful if reached here
                 });
-                
-                console.log('Transaction saved to Firestore');
+                console.log("Transaction details saved in Firestore.");
             } catch (error) {
-                console.error('Error saving transaction to Firestore:', error);
+                console.error("Error saving transaction to Firestore:", error);
+                alert("Failed to save transaction data in Firestore. Check console for details and ensure Firestore rules are set correctly.");
             }
         }
 
-        // Event listeners
-        document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
-        document.getElementById('connectWalletBtn2').addEventListener('click', connectWallet);
+        // Function to display transaction status messages
+        function displayTransactionStatus(message, type) {
+            transactionStatusDiv.textContent = message;
+            transactionStatusDiv.className = ''; // Clear previous classes
+            transactionStatusDiv.classList.add(type);
+            transactionStatusDiv.style.display = 'block';
+            transactionStatusDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll to message
+        }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initSolanaConnection();
-            
-            // Check if wallet is already connected (for page refresh)
-            if (window.solana && window.solana.isConnected) {
-                window.solana.connect({ onlyIfTrusted: true })
-                    .then(response => {
-                        walletAddress = response.publicKey.toString();
-                        document.getElementById('connectWalletBtn').classList.add('d-none');
-                        document.getElementById('connectWalletBtn2').classList.add('d-none');
-                        document.getElementById('walletInfo').classList.remove('d-none');
-                        document.getElementById('walletAddress').textContent = `${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`;
-                        document.getElementById('walletNotConnected').classList.add('d-none');
-                        document.getElementById('presaleDashboard').classList.remove('d-none');
-                        loadTransactionHistory(walletAddress);
-                    })
-                    .catch(error => {
-                        console.log('Wallet not connected:', error);
-                    });
-            }
-        });
     </script>
 </body>
 </html>
