@@ -558,7 +558,7 @@
     </div>
 
     <script>
-   const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
     authDomain: "miner-zyx.firebaseapp.com",
     projectId: "miner-zyx",
@@ -573,8 +573,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Blockchain Configuration
-const TRANSACTIONS_PER_BLOCK = 100;
+// ==================== CHANGED TO 250 ====================
+const TRANSACTIONS_PER_BLOCK = 250;  // CHANGED FROM 100 TO 250
 const MINING_REWARD = 5.0;
 const DIFFICULTY = 4;
 
@@ -586,7 +586,85 @@ let miningInterval = null;
 let lastProcessedTimestamp = null;
 
 // ====================
-// ONE-TIME MIGRATION FUNCTIONS
+// DIAGNOSTIC FUNCTIONS
+// ====================
+
+async function diagnoseTransactionAvailability() {
+    logToConsole('=== DIAGNOSTIC: Checking transaction availability ===', 'info');
+    
+    try {
+        // Check total transactions in blockchain
+        const totalSnapshot = await db.collection('blockchain').get();
+        logToConsole(`Total transactions in database: ${totalSnapshot.size}`, 'info');
+        
+        // Check by status
+        const pendingSnapshot = await db.collection('blockchain')
+            .where('status', '==', 'pending')
+            .get();
+        
+        const confirmedSnapshot = await db.collection('blockchain')
+            .where('status', '==', 'confirmed')
+            .get();
+        
+        const noStatusSnapshot = await db.collection('blockchain')
+            .where('status', '==', null)
+            .get();
+        
+        const otherStatusSnapshot = await db.collection('blockchain')
+            .where('status', 'not-in', ['pending', 'confirmed', null])
+            .get();
+        
+        logToConsole(`Pending transactions: ${pendingSnapshot.size}`, 
+            pendingSnapshot.size > 0 ? 'success' : 'warning');
+        logToConsole(`Confirmed transactions: ${confirmedSnapshot.size}`, 'info');
+        logToConsole(`Transactions without status: ${noStatusSnapshot.size}`, 
+            noStatusSnapshot.size > 0 ? 'warning' : 'info');
+        logToConsole(`Other status transactions: ${otherStatusSnapshot.size}`, 'info');
+        
+        // Check blockIndex distribution
+        const noBlockIndexSnapshot = await db.collection('blockchain')
+            .where('blockIndex', '==', null)
+            .get();
+        
+        const hasBlockIndexSnapshot = await db.collection('blockchain')
+            .where('blockIndex', '!=', null)
+            .get();
+        
+        logToConsole(`Transactions without blockIndex: ${noBlockIndexSnapshot.size}`, 
+            noBlockIndexSnapshot.size > 0 ? 'success' : 'info');
+        logToConsole(`Transactions with blockIndex: ${hasBlockIndexSnapshot.size}`, 'info');
+        
+        // Show sample pending transactions
+        if (pendingSnapshot.size > 0) {
+            logToConsole(`=== Sample of ${Math.min(3, pendingSnapshot.size)} pending transactions ===`, 'info');
+            pendingSnapshot.docs.slice(0, 3).forEach((doc, idx) => {
+                const data = doc.data();
+                logToConsole(`${idx + 1}. ${data.from} → ${data.to} (${data.amount}) - ${data.timestamp}`, 'info');
+            });
+        }
+        
+        // Calculate how many blocks we can create
+        const availableForMining = pendingSnapshot.size + noStatusSnapshot.size;
+        const blocksPossible = Math.floor(availableForMining / TRANSACTIONS_PER_BLOCK);
+        
+        logToConsole(`=== MINING CAPACITY ===`, 'info');
+        logToConsole(`Transactions available for mining: ${availableForMining}`, 
+            availableForMining >= TRANSACTIONS_PER_BLOCK ? 'success' : 'warning');
+        logToConsole(`Possible blocks: ${blocksPossible}`, 
+            blocksPossible > 0 ? 'success' : 'warning');
+        logToConsole(`Transactions per block required: ${TRANSACTIONS_PER_BLOCK}`, 'info');
+        
+        if (availableForMining < TRANSACTIONS_PER_BLOCK) {
+            logToConsole(`❌ NOT ENOUGH TRANSACTIONS: Need ${TRANSACTIONS_PER_BLOCK - availableForMining} more transactions to create a block`, 'error');
+        }
+        
+    } catch (error) {
+        logToConsole(`Diagnostic error: ${error.message}`, 'error');
+    }
+}
+
+// ====================
+// UPDATED MIGRATION FUNCTION FOR 250 TRANSACTIONS
 // ====================
 
 async function migrateExistingTransactions() {
@@ -599,6 +677,7 @@ async function migrateExistingTransactions() {
     
     console.log('Starting migration of existing transactions...');
     logToConsole('Starting migration of existing transactions...', 'info');
+    logToConsole(`Target: ${TRANSACTIONS_PER_BLOCK} transactions per block`, 'info');
     
     try {
         // Get ALL transactions from blockchain collection
@@ -617,22 +696,14 @@ async function migrateExistingTransactions() {
             const data = doc.data();
             const updates = {};
             
-            // Add missing blockchain fields
-            if (!data.status) {
-                updates.status = 'pending';  // Set all to pending so they can be mined
-            }
+            // ========== CRITICAL CHANGE ==========
+            // Reset ALL transactions to pending (so they can be mined into 250-block batches)
+            updates.status = 'pending';  // Force all to pending
             
-            if (!data.blockIndex && data.blockIndex !== 0) {
-                updates.blockIndex = null;  // Not in any block yet
-            }
-            
-            if (!data.blockHash) {
-                updates.blockHash = null;  // No block hash yet
-            }
-            
-            if (!data.confirmedAt) {
-                updates.confirmedAt = null;  // Not confirmed yet
-            }
+            // Reset block references (so they can be re-mined into new blocks)
+            updates.blockIndex = null;
+            updates.blockHash = null;
+            updates.confirmedAt = null;
             
             // Calculate transaction hash if missing
             if (!data.transactionHash) {
@@ -682,7 +753,10 @@ async function migrateExistingTransactions() {
         
         console.log(`✅ MIGRATION COMPLETE: Updated ${updatedCount} transactions`);
         logToConsole(`✅ MIGRATION COMPLETE: Updated ${updatedCount} transactions`, 'success');
-        logToConsole('All transactions now have: status, blockIndex, blockHash, transactionHash fields', 'success');
+        logToConsole(`All transactions reset to 'pending' for ${TRANSACTIONS_PER_BLOCK}-transaction blocks`, 'success');
+        
+        // Clear existing blocks to start fresh
+        await clearExistingBlocks();
         
         // Now initialize the blockchain with migrated data
         await initializeFirstBlocks(true);
@@ -694,8 +768,206 @@ async function migrateExistingTransactions() {
     }
 }
 
+async function clearExistingBlocks() {
+    try {
+        logToConsole('Clearing existing blocks for fresh start...', 'info');
+        
+        // Delete all blocks
+        const blocksSnapshot = await db.collection('blocks').get();
+        const batch = db.batch();
+        
+        blocksSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        // Delete confirmed transactions
+        const confirmedSnapshot = await db.collection('confirmed_transactions').get();
+        confirmedSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        logToConsole(`Cleared ${blocksSnapshot.size} blocks and ${confirmedSnapshot.size} confirmed transactions`, 'success');
+        
+    } catch (error) {
+        logToConsole(`Error clearing blocks: ${error.message}`, 'error');
+    }
+}
+
 // ====================
-// UPDATED BLOCKCHAIN CLASS WITH FIXED SAVE FUNCTION
+// UPDATED TRANSACTION QUERY FUNCTIONS FOR 250 TRANSACTIONS
+// ====================
+
+async function getNewTransactions() {
+    try {
+        logToConsole(`Searching for ${TRANSACTIONS_PER_BLOCK} transactions...`, 'info');
+        
+        // FIRST: Check how many pending transactions we have
+        const pendingCount = await db.collection('blockchain')
+            .where('status', '==', 'pending')
+            .get()
+            .then(snap => snap.size);
+        
+        logToConsole(`Found ${pendingCount} pending transactions in total`, 'info');
+        
+        // If we have enough pending transactions, use them
+        if (pendingCount >= TRANSACTIONS_PER_BLOCK) {
+            const snapshot = await db.collection('blockchain')
+                .where('status', '==', 'pending')
+                .orderBy('timestamp', 'asc')
+                .limit(TRANSACTIONS_PER_BLOCK * 2) // Get extra to ensure we have enough
+                .get();
+            
+            const newTransactions = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Double-check status and ensure not already in a block
+                if (data.status === 'pending' && (!data.blockIndex && data.blockIndex !== 0)) {
+                    newTransactions.push({
+                        originalId: doc.id,
+                        ...data
+                    });
+                }
+                
+                // Stop when we have enough
+                if (newTransactions.length >= TRANSACTIONS_PER_BLOCK) {
+                    return;
+                }
+            });
+            
+            logToConsole(`Retrieved ${newTransactions.length} pending transactions for mining`, 
+                newTransactions.length >= TRANSACTIONS_PER_BLOCK ? 'success' : 'warning');
+            return newTransactions.slice(0, TRANSACTIONS_PER_BLOCK);
+        }
+        
+        // ==================== FIND ALL UNMINED TRANSACTIONS ====================
+        logToConsole(`Not enough pending transactions (${pendingCount}). Searching for all unmined transactions...`, 'warning');
+        
+        // Get a large batch of transactions
+        const allSnapshot = await db.collection('blockchain')
+            .orderBy('timestamp', 'asc')
+            .limit(TRANSACTIONS_PER_BLOCK * 3) // Get 3x what we need
+            .get();
+        
+        const unminedTransactions = [];
+        let processedCount = 0;
+        
+        allSnapshot.forEach(doc => {
+            const data = doc.data();
+            processedCount++;
+            
+            // Include transactions that are NOT confirmed AND not in a block
+            const isUnmined = (!data.blockIndex && data.blockIndex !== 0) || 
+                              data.status !== 'confirmed';
+            
+            if (isUnmined) {
+                unminedTransactions.push({
+                    originalId: doc.id,
+                    ...data,
+                    // Ensure status is set to pending
+                    status: 'pending'
+                });
+            }
+            
+            // Stop when we have enough
+            if (unminedTransactions.length >= TRANSACTIONS_PER_BLOCK) {
+                return;
+            }
+        });
+        
+        logToConsole(`Processed ${processedCount} transactions, found ${unminedTransactions.length} unmined transactions`, 'info');
+        
+        // If we found transactions, update their status to pending
+        if (unminedTransactions.length > 0) {
+            await updateTransactionStatuses(unminedTransactions);
+        }
+        
+        return unminedTransactions.slice(0, TRANSACTIONS_PER_BLOCK);
+        
+    } catch (error) {
+        logToConsole(`Error fetching transactions: ${error.message}`, 'error');
+        console.error('Full error:', error);
+        return await getNewTransactionsFallback();
+    }
+}
+
+async function updateTransactionStatuses(transactions) {
+    try {
+        const batch = db.batch();
+        let updatedCount = 0;
+        
+        for (const tx of transactions.slice(0, 250)) { // Limit to 250
+            const txRef = db.collection('blockchain').doc(tx.originalId);
+            
+            // Update to pending and clear block references
+            batch.update(txRef, {
+                status: 'pending',
+                blockIndex: null,
+                blockHash: null,
+                confirmedAt: null
+            });
+            updatedCount++;
+        }
+        
+        if (updatedCount > 0) {
+            await batch.commit();
+            logToConsole(`Updated ${updatedCount} transactions to 'pending' status`, 'success');
+        }
+        
+    } catch (error) {
+        logToConsole(`Error updating transaction statuses: ${error.message}`, 'error');
+    }
+}
+
+async function getNewTransactionsFallback() {
+    try {
+        logToConsole('Using fallback transaction query...', 'warning');
+        
+        // Get ALL transactions ordered by timestamp
+        const snapshot = await db.collection('blockchain')
+            .orderBy('timestamp', 'asc')
+            .limit(TRANSACTIONS_PER_BLOCK * 4) // Get 4x what we need
+            .get();
+        
+        const allTransactions = [];
+        snapshot.forEach(doc => {
+            allTransactions.push({
+                originalId: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        logToConsole(`Retrieved ${allTransactions.length} total transactions`, 'info');
+        
+        // Filter for unmined transactions (no blockIndex or not confirmed)
+        const unmined = allTransactions.filter(tx => {
+            const hasNoBlock = !tx.blockIndex && tx.blockIndex !== 0;
+            const isNotConfirmed = tx.status !== 'confirmed';
+            return hasNoBlock || isNotConfirmed;
+        });
+        
+        // Sort by timestamp (oldest first)
+        unmined.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        
+        logToConsole(`Found ${unmined.length} unmined transactions (fallback)`, 
+            unmined.length >= TRANSACTIONS_PER_BLOCK ? 'success' : 'warning');
+        
+        // Update status for these transactions
+        if (unmined.length > 0) {
+            await updateTransactionStatuses(unmined);
+        }
+        
+        // Take only what we need
+        return unmined.slice(0, TRANSACTIONS_PER_BLOCK);
+        
+    } catch (error) {
+        logToConsole(`Fallback query failed: ${error.message}`, 'error');
+        return [];
+    }
+}
+
+// ====================
+// UPDATED BLOCKCHAIN CLASS FOR 250 TRANSACTIONS
 // ====================
 
 class Blockchain {
@@ -724,9 +996,10 @@ class Blockchain {
         newBlock.previousHash = this.getLatestBlock().hash;
         
         // Mine the block
-        logToConsole(`Mining block ${newBlock.index}...`, 'info');
+        logToConsole(`Mining block ${newBlock.index} with ${newBlock.transactions.length} transactions...`, 'info');
         const hash = newBlock.mineBlock(this.difficulty);
-        logToConsole(`Block mined! Nonce: ${newBlock.nonce}, Hash: ${hash.substring(0, 16)}...`, 'success');
+        logToConsole(`Block ${newBlock.index} mined! Nonce: ${newBlock.nonce}, Hash: ${hash.substring(0, 16)}...`, 'success');
+        logToConsole(`Transactions in block: ${newBlock.transactions.length}`, 'info');
         
         this.chain.push(newBlock);
         
@@ -748,7 +1021,8 @@ class Blockchain {
                 merkleRoot: block.merkleRoot,
                 difficulty: this.difficulty,
                 minedBy: currentUser ? currentUser.email : 'system',
-                minedAt: new Date().toISOString()
+                minedAt: new Date().toISOString(),
+                transactionsPerBlock: TRANSACTIONS_PER_BLOCK  // Track the block size
             };
 
             // Save block metadata
@@ -757,6 +1031,7 @@ class Blockchain {
             // Process each transaction
             const batch = db.batch();
             let transactionIndex = 0;
+            let confirmedCount = 0;
             
             for (const transaction of block.transactions) {
                 if (transaction.type === 'mining_reward' || transaction.from === 'BLOCK_REWARD') {
@@ -787,16 +1062,17 @@ class Blockchain {
                     });
                     
                 } else if (transaction.originalId) {
-                    // ========== CRITICAL: Update the original transaction ==========
+                    // ========== UPDATE ORIGINAL TRANSACTION ==========
                     const txRef = db.collection('blockchain').doc(transaction.originalId);
                     
                     batch.update(txRef, {
-                        status: 'confirmed',                    // Change from pending to confirmed
-                        blockIndex: block.index,                // Set the block number
-                        blockHash: block.hash,                  // Set the block's hash
-                        confirmedAt: new Date().toISOString(),  // Set confirmation timestamp
-                        transactionIndex: transactionIndex      // Position in the block
+                        status: 'confirmed',
+                        blockIndex: block.index,
+                        blockHash: block.hash,
+                        confirmedAt: new Date().toISOString(),
+                        transactionIndex: transactionIndex
                     });
+                    confirmedCount++;
                     
                     // Save to confirmed_transactions collection
                     const confirmedRef = db.collection('confirmed_transactions').doc(transaction.originalId);
@@ -815,7 +1091,7 @@ class Blockchain {
             
             await batch.commit();
             
-            logToConsole(`✅ Block ${block.index} saved. ${block.transactions.length} transactions updated.`, 'success');
+            logToConsole(`✅ Block ${block.index} saved. ${confirmedCount} transactions confirmed.`, 'success');
             
             // Update mining stats
             await updateMiningStats(block.index, block.transactions.length);
@@ -918,28 +1194,28 @@ class Block {
             this.hash = this.calculateHash();
             attempts++;
             
-            // Show progress every 10,000 attempts
-            if (attempts % 10000 === 0) {
+            // Show progress every 50,000 attempts (more frequent for larger blocks)
+            if (attempts % 50000 === 0) {
                 const elapsed = Date.now() - startTime;
-                logToConsole(`Mining... ${attempts} attempts, ${elapsed}ms`, 'info');
+                logToConsole(`Mining... ${attempts.toLocaleString()} attempts, ${elapsed}ms`, 'info');
             }
         }
         
         const totalTime = Date.now() - startTime;
-        logToConsole(`Mined in ${totalTime}ms with ${attempts} attempts`, 'success');
+        logToConsole(`Mined in ${totalTime}ms with ${attempts.toLocaleString()} attempts`, 'success');
         return this.hash;
     }
 }
 
 // ====================
-// UPDATED INITIALIZATION FUNCTIONS
+// UPDATED INITIALIZATION FOR 250 TRANSACTIONS
 // ====================
 
 async function initializeFirstBlocks(isMigration = false) {
     try {
-        logToConsole('Creating blockchain from transactions...', 'info');
+        logToConsole(`Creating blockchain with ${TRANSACTIONS_PER_BLOCK} transactions per block...`, 'info');
         
-        // Get all PENDING transactions (now they have status field after migration)
+        // Get all PENDING transactions
         const querySnapshot = await db.collection('blockchain')
             .where('status', '==', 'pending')
             .orderBy('timestamp', 'asc')
@@ -957,20 +1233,31 @@ async function initializeFirstBlocks(isMigration = false) {
             });
         });
         
-        logToConsole(`Found ${transactions.length} pending transactions to organize into blocks`, 'info');
+        logToConsole(`Found ${transactions.length} pending transactions`, 'info');
         
         if (transactions.length === 0) {
-            if (isMigration) {
-                logToConsole('No pending transactions found after migration. All transactions may already be confirmed.', 'info');
-            } else {
-                logToConsole('No pending transactions found. Blockchain is up-to-date.', 'info');
-            }
+            logToConsole('No pending transactions found.', 'warning');
+            await diagnoseTransactionAvailability();
             return;
         }
         
-        // Group into blocks of 100 transactions each
-        for (let i = 0; i < transactions.length; i += TRANSACTIONS_PER_BLOCK) {
-            const blockTransactions = transactions.slice(i, i + TRANSACTIONS_PER_BLOCK);
+        // Calculate how many full blocks we can create
+        const fullBlocks = Math.floor(transactions.length / TRANSACTIONS_PER_BLOCK);
+        const remainingTransactions = transactions.length % TRANSACTIONS_PER_BLOCK;
+        
+        logToConsole(`Can create ${fullBlocks} full blocks of ${TRANSACTIONS_PER_BLOCK} transactions`, 'info');
+        logToConsole(`Remaining transactions: ${remainingTransactions}`, 'info');
+        
+        if (fullBlocks === 0) {
+            logToConsole(`❌ NOT ENOUGH TRANSACTIONS: Need ${TRANSACTIONS_PER_BLOCK} transactions per block, but only have ${transactions.length}`, 'error');
+            return;
+        }
+        
+        // Group into blocks of TRANSACTIONS_PER_BLOCK transactions each
+        for (let blockNum = 0; blockNum < fullBlocks; blockNum++) {
+            const startIdx = blockNum * TRANSACTIONS_PER_BLOCK;
+            const endIdx = startIdx + TRANSACTIONS_PER_BLOCK;
+            const blockTransactions = transactions.slice(startIdx, endIdx);
             
             // Add mining reward transaction for the miner
             const rewardTx = {
@@ -994,21 +1281,26 @@ async function initializeFirstBlocks(isMigration = false) {
             );
             
             logToConsole(`Creating Block #${newBlock.index} with ${blockTransactions.length} transactions...`, 'info');
+            logToConsole(`Transactions ${startIdx + 1} to ${endIdx} of ${transactions.length}`, 'info');
             
             // Mine and save the block
             await blockchain.addBlock(newBlock);
             
-            logToConsole(`✅ Block #${newBlock.index} created successfully`, 'success');
+            logToConsole(`✅ Block #${newBlock.index} created successfully with ${blockTransactions.length} transactions`, 'success');
             
             // Update UI
             updateBlocksDisplay();
             updateStats();
             
             // Small delay to prevent overwhelming the browser
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
-        logToConsole('🎉 Blockchain initialization complete!', 'success');
+        logToConsole(`🎉 Created ${fullBlocks} blocks with ${TRANSACTIONS_PER_BLOCK} transactions each!`, 'success');
+        
+        if (remainingTransactions > 0) {
+            logToConsole(`Note: ${remainingTransactions} transactions remaining (need ${TRANSACTIONS_PER_BLOCK - remainingTransactions} more for another block)`, 'info');
+        }
         
     } catch (error) {
         logToConsole(`Error creating blocks: ${error.message}`, 'error');
@@ -1065,9 +1357,12 @@ async function loadExistingBlockchain() {
         block.merkleRoot = blockData.merkleRoot;
         
         blockchain.chain.push(block);
+        
+        // Log block details
+        logToConsole(`Loaded Block #${blockData.index} with ${transactions.length} transactions`, 'info');
     }
     
-    logToConsole(`Loaded ${blockchain.chain.length - 1} blocks`, 'success');
+    logToConsole(`Loaded ${blockchain.chain.length - 1} blocks from database`, 'success');
 }
 
 async function initializeBlockchain() {
@@ -1083,8 +1378,8 @@ async function initializeBlockchain() {
         if (blocksSnapshot.empty) {
             logToConsole('Creating new blockchain...', 'info');
             blockchain = new Blockchain();
-            // Don't auto-create blocks - wait for migration
-            logToConsole('Please run migration first to add blockchain fields to existing transactions', 'warning');
+            // Run diagnostic first
+            await diagnoseTransactionAvailability();
         } else {
             logToConsole('Loading existing blockchain...', 'info');
             await loadExistingBlockchain();
@@ -1100,76 +1395,7 @@ async function initializeBlockchain() {
 }
 
 // ====================
-// OPTIMIZED FIREBASE QUERIES
-// ====================
-
-async function getNewTransactions() {
-    try {
-        // Get pending transactions (now they have status field after migration)
-        const snapshot = await db.collection('blockchain')
-            .where('status', '==', 'pending')
-            .orderBy('timestamp', 'asc')
-            .limit(TRANSACTIONS_PER_BLOCK + 50) // Get extra for filtering
-            .get();
-        
-        const newTransactions = [];
-        let count = 0;
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            // Only include pending transactions
-            if (data.status === 'pending') {
-                newTransactions.push({
-                    originalId: doc.id,
-                    ...data
-                });
-                count++;
-                
-                // Track last timestamp for next query
-                if (!lastProcessedTimestamp || new Date(data.timestamp) > new Date(lastProcessedTimestamp)) {
-                    lastProcessedTimestamp = data.timestamp;
-                }
-            }
-        });
-        
-        logToConsole(`Found ${newTransactions.length} pending transactions`, 'info');
-        return newTransactions;
-        
-    } catch (error) {
-        logToConsole(`Error fetching transactions: ${error.message}`, 'error');
-        return await getNewTransactionsFallback();
-    }
-}
-
-async function getNewTransactionsFallback() {
-    try {
-        // Alternative: Get all and filter in memory
-        const snapshot = await db.collection('blockchain')
-            .orderBy('timestamp', 'asc')
-            .limit(150)
-            .get();
-        
-        const transactions = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.status === 'pending') {
-                transactions.push({
-                    originalId: doc.id,
-                    ...doc.data()
-                });
-            }
-        });
-        
-        return transactions.slice(0, TRANSACTIONS_PER_BLOCK - 1);
-        
-    } catch (error) {
-        logToConsole(`Fallback query failed: ${error.message}`, 'error');
-        return [];
-    }
-}
-
-// ====================
-// MINING FUNCTIONS (Updated)
+// UPDATED MINING FUNCTIONS FOR 250 TRANSACTIONS
 // ====================
 
 async function startMining() {
@@ -1184,33 +1410,47 @@ async function startMining() {
         return;
     }
 
+    // Run diagnostic first
+    await diagnoseTransactionAvailability();
+
     isMining = true;
     document.getElementById('miningStatus').textContent = 'Mining...';
     document.querySelector('.btn-success').innerHTML = '⏹️ Stop Mining';
     
     logToConsole(`🚀 Mining started for: ${xyzAddress}`, 'success');
-    logToConsole(`⛏️  Difficulty: ${DIFFICULTY} | Reward: ${MINING_REWARD} XYZ`, 'info');
+    logToConsole(`⛏️  Difficulty: ${DIFFICULTY} | Reward: ${MINING_REWARD} XYZ | Transactions per block: ${TRANSACTIONS_PER_BLOCK}`, 'info');
 
     // Start mining loop
     miningInterval = setInterval(async () => {
         await mineNextBlock(xyzAddress);
-    }, 10000); // Check every 10 seconds
+    }, 15000); // Check every 15 seconds (longer for larger blocks)
 }
 
 async function mineNextBlock(xyzAddress) {
     try {
-        // Get pending transactions
-        const pendingTx = await getNewTransactions();
+        logToConsole(`Attempting to mine block #${blockchain.chain.length}...`, 'info');
         
-        if (pendingTx.length === 0) {
-            logToConsole('No pending transactions. Waiting...', 'warning');
+        // Get transactions for mining
+        let pendingTx = await getNewTransactions();
+        
+        logToConsole(`Retrieved ${pendingTx.length} transactions`, 'info');
+        
+        // Check if we have enough transactions
+        if (pendingTx.length < TRANSACTIONS_PER_BLOCK - 1) {
+            logToConsole(`❌ INSUFFICIENT TRANSACTIONS: Only ${pendingTx.length} available, need ${TRANSACTIONS_PER_BLOCK - 1}`, 'error');
+            logToConsole(`Waiting for more transactions...`, 'info');
+            
+            // Run diagnostic to see what's available
+            await diagnoseTransactionAvailability();
             return;
         }
-
-        // Create block with transactions
+        
+        // Take exactly TRANSACTIONS_PER_BLOCK - 1 transactions (leave 1 spot for reward)
         const transactionsToMine = pendingTx.slice(0, TRANSACTIONS_PER_BLOCK - 1);
         
-        // Add mining reward
+        logToConsole(`Mining with ${transactionsToMine.length} regular transactions`, 'success');
+        
+        // Add mining reward as the 250th transaction
         transactionsToMine.push({
             from: 'BLOCK_REWARD',
             to: xyzAddress,
@@ -1222,6 +1462,8 @@ async function mineNextBlock(xyzAddress) {
             receiverEmail: currentUser.email,
             status: 'pending'
         });
+
+        logToConsole(`Total transactions in block: ${transactionsToMine.length}`, 'info');
 
         const newBlock = new Block(
             blockchain.chain.length,
@@ -1242,6 +1484,7 @@ async function mineNextBlock(xyzAddress) {
         
     } catch (error) {
         logToConsole(`Mining error: ${error.message}`, 'error');
+        console.error('Mining error details:', error);
     }
 }
 
@@ -1264,8 +1507,10 @@ async function updateMiningStats(blockIndex, transactionCount) {
         await userRef.set({
             email: currentUser.email,
             blocksMined: firebase.firestore.FieldValue.increment(1),
+            totalTransactionsMined: firebase.firestore.FieldValue.increment(transactionCount),
             lastActive: new Date().toISOString(),
-            lastBlockMined: blockIndex
+            lastBlockMined: blockIndex,
+            transactionsPerBlock: TRANSACTIONS_PER_BLOCK
         }, { merge: true });
         
         // Update global stats
@@ -1274,7 +1519,8 @@ async function updateMiningStats(blockIndex, transactionCount) {
             totalBlocks: firebase.firestore.FieldValue.increment(1),
             totalTransactions: firebase.firestore.FieldValue.increment(transactionCount),
             lastUpdated: new Date().toISOString(),
-            lastBlockIndex: blockIndex
+            lastBlockIndex: blockIndex,
+            currentTransactionsPerBlock: TRANSACTIONS_PER_BLOCK
         }, { merge: true });
         
     } catch (error) {
@@ -1294,11 +1540,12 @@ function sendRewardNotification(address, amount, blockHash) {
         blockHash: blockHash,
         blockIndex: blockchain.chain.length - 1,
         timestamp: new Date().toISOString(),
-        status: 'distributed'
+        status: 'distributed',
+        transactionsInBlock: TRANSACTIONS_PER_BLOCK
     });
     
     logToConsole(`💰 ${amount} XYZ sent to ${address}`, 'success');
-    logToConsole(`📦 Block: ${blockHash.substring(0, 20)}...`, 'info');
+    logToConsole(`📦 Block ${blockchain.chain.length - 1}: ${blockHash.substring(0, 20)}...`, 'info');
     
     // Update rewards counter
     const rewardsElement = document.getElementById('totalRewards');
@@ -1336,7 +1583,7 @@ function updateBlocksDisplay() {
             <div class="block-data">
                 <div class="data-row">
                     <span class="data-label">Transactions:</span>
-                    <span>${block.transactions.length}</span>
+                    <span>${block.transactions.length}/${TRANSACTIONS_PER_BLOCK}</span>
                 </div>
                 <div class="data-row">
                     <span class="data-label">Nonce:</span>
@@ -1376,6 +1623,12 @@ function updateStats() {
     document.getElementById('blocksMined').textContent = blockchain.chain.length - 1;
     document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
     document.getElementById('totalRewards').textContent = totalRewards.toFixed(2) + ' XYZ';
+    
+    // Add transactions per block info
+    const miningStatus = document.getElementById('miningStatus');
+    if (miningStatus) {
+        miningStatus.textContent = isMining ? 'Mining...' : 'Idle';
+    }
 }
 
 function logToConsole(message, type = 'info') {
@@ -1388,6 +1641,39 @@ function logToConsole(message, type = 'info') {
     
     consoleOutput.appendChild(line);
     consoleOutput.scrollTop = consoleOutput.scrollHeight;
+}
+
+// ====================
+// ADD DIAGNOSTIC BUTTON TO UI
+// ====================
+
+function addDiagnosticButton() {
+    const cardHeader = document.querySelector('.card-header');
+    if (!cardHeader) return;
+    
+    // Check if button already exists
+    if (document.getElementById('diagnosticBtn')) return;
+    
+    const diagnosticBtn = document.createElement('button');
+    diagnosticBtn.id = 'diagnosticBtn';
+    diagnosticBtn.className = 'btn btn-primary';
+    diagnosticBtn.innerHTML = '🔍 Check Transactions';
+    diagnosticBtn.onclick = diagnoseTransactionAvailability;
+    diagnosticBtn.title = 'Check how many transactions are available for mining';
+    diagnosticBtn.style.marginLeft = '10px';
+    
+    // Insert after the migration button or view button
+    const migrationBtn = document.getElementById('migrationBtn');
+    if (migrationBtn) {
+        migrationBtn.parentNode.insertBefore(diagnosticBtn, migrationBtn.nextSibling);
+    } else {
+        const viewBtn = document.querySelector('button[onclick="viewBlockchain()"]');
+        if (viewBtn) {
+            viewBtn.parentNode.insertBefore(diagnosticBtn, viewBtn.nextSibling);
+        } else {
+            cardHeader.appendChild(diagnosticBtn);
+        }
+    }
 }
 
 // ====================
@@ -1443,9 +1729,11 @@ async function login() {
         
         hideLoginModal();
         logToConsole(`Welcome ${currentUser.email}!`, 'success');
+        logToConsole(`Transactions per block: ${TRANSACTIONS_PER_BLOCK}`, 'info');
         
-        // Add migration button to UI
+        // Add buttons to UI
         addMigrationButton();
+        addDiagnosticButton();
         
         await initializeBlockchain();
         
@@ -1487,9 +1775,9 @@ function addMigrationButton() {
     const migrationBtn = document.createElement('button');
     migrationBtn.id = 'migrationBtn';
     migrationBtn.className = 'btn btn-warning';
-    migrationBtn.innerHTML = '🔄 Migrate Transactions';
+    migrationBtn.innerHTML = '🔄 Migrate for 250/blocks';
     migrationBtn.onclick = migrateExistingTransactions;
-    migrationBtn.title = 'One-time migration to add blockchain fields to existing transactions';
+    migrationBtn.title = 'Reset all transactions and prepare for 250-transaction blocks';
     migrationBtn.style.marginLeft = '10px';
     
     // Insert after the View Blockchain button
@@ -1517,7 +1805,7 @@ function viewBlockchain() {
         blockchain.isChainValid() ? 'success' : 'error');
     
     blockchain.chain.forEach((block, index) => {
-        logToConsole(`Block ${index}: ${block.hash.substring(0, 16)}...`, 'info');
+        logToConsole(`Block ${index}: ${block.hash.substring(0, 16)}... (${block.transactions.length} transactions)`, 'info');
     });
 }
 
@@ -1538,8 +1826,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             logToConsole(`Session restored for ${user.email}`, 'success');
             
-            // Add migration button
+            // Add buttons
             addMigrationButton();
+            addDiagnosticButton();
             
             initializeBlockchain();
         }
@@ -1559,6 +1848,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await setupFirebaseStructure();
     
     logToConsole('Blockchain Miner Ready', 'success');
+    logToConsole(`Configuration: ${TRANSACTIONS_PER_BLOCK} transactions per block`, 'info');
     logToConsole('Please login to start mining', 'info');
 });
     </script>
