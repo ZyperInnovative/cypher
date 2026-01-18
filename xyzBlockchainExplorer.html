@@ -3,230 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula Explorer | XYZ Blockchain</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&family=Segoe+UI&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <title>Blockchain Miner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    <link rel="stylesheet" href="xyzBlockchainExplorer.css">
-    <div class="ticker-container">
-        
-        </head>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 2.5em;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .auth-section, .miner-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 20px;
+            color: #00ff88;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        input:focus {
+            outline: 2px solid #00ff88;
+        }
+
+        button {
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            color: black;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .block {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .block-hash {
+            font-family: monospace;
+            font-size: 12px;
+            color: #00ccff;
+            word-break: break-all;
+        }
+
+        .transaction {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 14px;
+            border-left: 3px solid #ff9900;
+        }
+
+        .mining-status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+        }
+
+        .alert-error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff3333;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+    </style>
+</head>
 <body>
-    <div class="ticker-container">
-        <div class="ticker-header">Live Crypto Prices</div>
-        <div class="ticker-wrapper">
-            <div id="crypto-items" class="crypto-items"></div>
-            <div id="crypto-items-clone" class="crypto-items"></div>
-        </div>
-    </div>
     <div class="container">
         <header>
-            <div class="logo">NEBULA EXPLORER</div>
-            <div class="network">XYZ Blockchain Network</div>
+            <div class="logo">
+                <i class="fas fa-link"></i> BLOCKCHAIN MINER
+            </div>
+            <p>Transform Firebase transactions into a real blockchain</p>
         </header>
-        <!-- Notification Container -->
-        <div class="wallet-notification-wrapper">
-            <p>Notifications and Updates:</p>
-            <div class="wallet-notification" id="walletNotification">
-                <!-- Dynamic content goes here -->
-            </div>
-        </div>
-        
-        <div class="network-stats">
-            <div class="stat-card">
-                <div class="stat-label">Total Transactions</div>
-                <div class="stat-value" id="total-tx">--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Active Addresses</div>
-                <div class="stat-value" id="active-addresses">--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">XYZ in Circulation</div>
-                <div class="stat-value" id="xyz-circulation">--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Network Status</div>
-                <div class="stat-value" id="network-status">Online</div>
-            </div>
-        </div>
-        
-        <div class="search-container">
-            <input type="text" class="search-bar" id="search-input" placeholder="Search by Transaction Hash or XYZ Address...">
-            <button class="search-btn" id="search-btn">EXPLORE</button>
-        </div>
-        
-        <div class="loading" id="loading">
-            <div class="loader"></div>
-        </div>
-        
-        <div class="error-message" id="error-message">
-            No results found. Please check your input and try again.
-        </div>
-        
-        <div class="result-container" id="address-result">
-            <div class="result-header">
-                <h2>ADDRESS OVERVIEW</h2>
-                <div class="address" id="address-header"></div>
-            </div>
-            <div class="result-body">
-                <div class="address-balance">
-                    <div class="balance-card">
-                        <div class="data-label">XYZ Balance</div>
-                        <div class="balance-value" id="xyz-balance">--</div>
-                    </div>
-                    <div class="balance-card">
-                        <div class="data-label">SOL Balance</div>
-                        <div class="balance-value" id="sol-balance">--</div>
-                    </div>
-                </div>
-                
-                <h3>Recent Transactions</h3>
-                <div class="transaction-list-container" id="address-transactions">
-                    <!-- Transactions will be populated here -->
-                </div>
-            </div>
-        </div>
-        
-        <div class="result-container" id="transaction-result">
-            <div class="result-header">
-                <h2>TRANSACTION DETAILS</h2>
-                <div class="transaction-hash" id="tx-hash-header"></div>
-            </div>
-            <div class="result-body">
-                <div class="data-grid">
-                    <div class="data-item">
-                        <div class="data-label">Status</div>
-                        <div class="data-value" id="tx-status">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Timestamp</div>
-                        <div class="data-value" id="tx-timestamp">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">From</div>
-                        <div class="data-value" id="tx-from">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">To</div>
-                        <div class="data-value" id="tx-to">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Amount</div>
-                        <div class="data-value" id="tx-amount">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Gas Fee</div>
-                        <div class="data-value" id="tx-gas">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Transaction Type</div>
-                        <div class="data-value" id="tx-type">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Sender Email</div>
-                        <div class="data-value" id="tx-sender-email">--</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Receiver Email</div>
-                        <div class="data-value" id="tx-receiver-email">--</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="transaction-list-container">
-            <div class="section-header">LATEST BLOCKCHAIN TRANSACTIONS</div>
-            <div id="all-transactions">
-                <!-- All transactions will be populated here -->
-            </div>
-            <div class="pagination" id="pagination">
-                <!-- Pagination buttons will be added here -->
-            </div>
-        </div>
-    </div>
-  <!-- Add this section after the existing transaction list -->
-<div class="section-header">BLOCK EXPLORER</div>
-<div class="blockchain-container">
-    <div class="blockchain-header">
-        <div class="blockchain-info">
-            <div class="blockchain-stat">
-                <span class="stat-label">Total Blocks:</span>
-                <span class="stat-value" id="total-blocks">--</span>
-            </div>
-            <div class="blockchain-stat">
-                <span class="stat-label">Block Height:</span>
-                <span class="stat-value" id="block-height">--</span>
-            </div>
-            <div class="blockchain-stat">
-                <span class="stat-label">Difficulty:</span>
-                <span class="stat-value" id="block-difficulty">--</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="blocks-list" id="blocks-list">
-        <!-- Blocks will be loaded here -->
-    </div>
-    
-    <div class="pagination" id="block-pagination">
-        <!-- Block pagination -->
-    </div>
-</div>
 
-<!-- Add to result-container for block details -->
-<div class="result-container" id="block-result">
-    <div class="result-header">
-        <h2>BLOCK DETAILS</h2>
-        <div class="block-hash" id="block-hash-header"></div>
+        <!-- Authentication Section -->
+        <section id="authSection" class="auth-section">
+            <h2><i class="fas fa-user"></i> Authentication</h2>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="Email" value="admin@miner.com">
+                <input type="password" id="password" placeholder="Password" value="admin123">
+                <button onclick="login()">Login</button>
+                <button onclick="signup()">Sign Up</button>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </section>
+
+        <!-- Miner Section -->
+        <section id="minerSection" class="miner-section hidden">
+            <h2><i class="fas fa-digging"></i> Blockchain Miner</h2>
+            
+            <div class="info-card">
+                <p>Welcome, <span id="userEmail"></span>!</p>
+                <p>Enter your XYZ wallet address to receive mining rewards</p>
+            </div>
+
+            <div class="form-group">
+                <input type="text" id="walletAddress" placeholder="Enter your XYZ wallet address (0x...)">
+                <button onclick="saveWalletAddress()">Save Wallet Address</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Blocks</div>
+                    <div class="stat-value" id="totalBlocks">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value" id="totalTransactions">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mining Reward</div>
+                    <div class="stat-value">10 XYZ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Difficulty</div>
+                    <div class="stat-value" id="difficulty">4</div>
+                </div>
+            </div>
+
+            <div class="mining-controls">
+                <button onclick="initiateBlockchain()">Initialize Blockchain</button>
+                <button onclick="mineNewBlock()">Mine New Block</button>
+                <button onclick="verifyBlockchain()">Verify Blockchain</button>
+                <button onclick="viewMyRewards()">View My Rewards</button>
+            </div>
+
+            <div id="miningStatus" class="mining-status hidden">
+                <div class="spinner"></div>
+                <p id="statusMessage">Mining in progress...</p>
+            </div>
+
+            <div id="alertArea"></div>
+
+            <div id="blockchainView"></div>
+        </section>
     </div>
-    <div class="result-body">
-        <div class="data-grid">
-            <div class="data-item">
-                <div class="data-label">Block Height</div>
-                <div class="data-value" id="block-height-detail">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Block Hash</div>
-                <div class="data-value" id="block-hash-detail">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Previous Hash</div>
-                <div class="data-value" id="prev-hash-detail">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Timestamp</div>
-                <div class="data-value" id="block-timestamp">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Transactions</div>
-                <div class="data-value" id="block-transaction-count">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Merkle Root</div>
-                <div class="data-value" id="merkle-root">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Nonce</div>
-                <div class="data-value" id="block-nonce">--</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">Difficulty</div>
-                <div class="data-value" id="block-difficulty-detail">--</div>
-            </div>
-        </div>
-        
-        <h3>Block Transactions</h3>
-        <div class="transaction-list-container" id="block-transactions">
-            <!-- Block transactions will be loaded here -->
-        </div>
-    </div>
-</div>
-    <script src="xyzBlockchainExplorer-1A1-shaBlock.js"></script>
-    </body>
-    </html>
+
+    <script src="blockchain.js"></script>
+</body>
+</html>
