@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula Explorer | XYZ Blockchain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&family=Segoe+UI&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <link rel="stylesheet" href="xyzBlockchainExplorer.css">
+</head>
+<body>
+    <div class="ticker-container">
+        <div class="ticker-header">Live Crypto Prices</div>
+        <div class="ticker-wrapper">
+            <div id="crypto-items" class="crypto-items"></div>
+            <div id="crypto-items-clone" class="crypto-items"></div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">NEBULA EXPLORER</div>
+            <div class="network">XYZ Blockchain Network</div>
+            <div class="chain-id">Chain ID: 0x1A1</div>
+        </header>
+        
+        <!-- Notification Container -->
+        <div class="wallet-notification-wrapper">
+            <p>Notifications and Updates:</p>
+            <div class="wallet-notification" id="walletNotification"></div>
+        </div>
+        
+        <!-- Blockchain Stats -->
+        <div class="blockchain-stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Blocks</div>
+                <div class="stat-value" id="total-blocks">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Transactions</div>
+                <div class="stat-value" id="total-tx">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Block Height</div>
+                <div class="stat-value" id="block-height">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Addresses</div>
+                <div class="stat-value" id="active-addresses">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">XYZ in Circulation</div>
+                <div class="stat-value" id="xyz-circulation">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Network Status</div>
+                <div class="stat-value" id="network-status">Online</div>
+            </div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="search-section">
+            <input type="text" class="search-bar" id="search-input" placeholder="Search by Block #, Transaction Hash, or Address...">
+            <button class="search-btn" id="search-btn">EXPLORE</button>
+            <div class="search-options">
+                <button class="search-option active" data-type="all">All</button>
+                <button class="search-option" data-type="block">Blocks</button>
+                <button class="search-option" data-type="transaction">Transactions</button>
+                <button class="search-option" data-type="address">Addresses</button>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="loader"></div>
+            <div class="loading-text">Loading Blockchain Data...</div>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-message" id="error-message">
+            No results found. Please check your input and try again.
+        </div>
+        
+        <!-- Block Result -->
+        <div class="result-container" id="block-result">
+            <div class="result-header">
+                <h2>BLOCK DETAILS</h2>
+                <div class="block-number" id="block-header"></div>
+            </div>
+            <div class="result-body">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">Block Number</div>
+                        <div class="data-value" id="block-number">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Block Hash</div>
+                        <div class="data-value" id="block-hash">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Previous Hash</div>
+                        <div class="data-value" id="block-prev-hash">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Timestamp</div>
+                        <div class="data-value" id="block-timestamp">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Transactions</div>
+                        <div class="data-value" id="block-transactions-count">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Miner</div>
+                        <div class="data-value" id="block-miner">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Difficulty</div>
+                        <div class="data-value" id="block-difficulty">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Size</div>
+                        <div class="data-value" id="block-size">--</div>
+                    </div>
+                </div>
+                
+                <h3>Transactions in Block</h3>
+                <div class="transaction-list-container" id="block-transactions">
+                    <!-- Transactions will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transaction Result -->
+        <div class="result-container" id="transaction-result">
+            <div class="result-header">
+                <h2>TRANSACTION DETAILS</h2>
+                <div class="transaction-hash" id="tx-hash-header"></div>
+                <button class="copy-btn" id="copy-tx-link">Copy Link</button>
+            </div>
+            <div class="result-body">
+                <div class="transaction-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Block:</span>
+                        <span class="meta-value" id="tx-block-number">--</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Status:</span>
+                        <span class="meta-value status-confirmed" id="tx-status">Confirmed</span>
+                    </div>
+                </div>
+                
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">Transaction Hash</div>
+                        <div class="data-value" id="tx-hash">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Block Hash</div>
+                        <div class="data-value" id="tx-block-hash">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Timestamp</div>
+                        <div class="data-value" id="tx-timestamp">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">From</div>
+                        <div class="data-value address-link" id="tx-from">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">To</div>
+                        <div class="data-value address-link" id="tx-to">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Amount</div>
+                        <div class="data-value" id="tx-amount">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Gas Fee</div>
+                        <div class="data-value" id="tx-gas">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Transaction Type</div>
+                        <div class="data-value" id="tx-type">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Nonce</div>
+                        <div class="data-value" id="tx-nonce">--</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Transaction Link</div>
+                        <div class="data-value">
+                            <a href="#" id="tx-permalink" target="_blank">View Permalink</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Address Result -->
+        <div class="result-container" id="address-result">
+            <div class="result-header">
+                <h2>ADDRESS OVERVIEW</h2>
+                <div class="address" id="address-header"></div>
+                <button class="copy-btn" id="copy-address">Copy Address</button>
+            </div>
+            <div class="result-body">
+                <div class="address-balance">
+                    <div class="balance-card">
+                        <div class="data-label">XYZ Balance</div>
+                        <div class="balance-value" id="xyz-balance">--</div>
+                    </div>
+                    <div class="balance-card">
+                        <div class="data-label">SOL Balance</div>
+                        <div class="balance-value" id="sol-balance">--</div>
+                    </div>
+                    <div class="balance-card">
+                        <div class="data-label">Total Transactions</div>
+                        <div class="balance-value" id="address-tx-count">--</div>
+                    </div>
+                </div>
+                
+                <h3>Recent Transactions</h3>
+                <div class="transaction-list-container" id="address-transactions">
+                    <!-- Transactions will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Latest Blocks -->
+        <div class="block-list-container">
+            <div class="section-header">LATEST BLOCKS</div>
+            <div id="all-blocks">
+                <!-- Blocks will be populated here -->
+            </div>
+            <div class="pagination" id="block-pagination"></div>
+        </div>
+        
+        <!-- Latest Transactions -->
+        <div class="transaction-list-container">
+            <div class="section-header">LATEST TRANSACTIONS</div>
+            <div id="all-transactions">
+                <!-- All transactions will be populated here -->
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
+    
+    <script src="xyzBlockchainExplorer-enhanced.js"></script>
+</body>
+</html>
