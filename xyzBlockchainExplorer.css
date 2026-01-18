@@ -600,250 +600,226 @@
             }
               
 
-/* Add to existing CSS */
-.chain-id {
-    font-family: 'Roboto', sans-serif;
-    font-size: 0.9rem;
-    color: var(--black);
-    opacity: 0.7;
-    background: var(--neumorphic-bg);
-    padding: 4px 10px;
-    border-radius: 10px;
-    box-shadow: inset 2px 2px 4px var(--neumorphic-inset-dark), 
-                inset -2px -2px 4px var(--neumorphic-inset-light);
-}
+/* Add to xyzBlockchainExplorer (1).css */
 
-.blockchain-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin: 2rem 0;
-}
-
-.search-section {
-    position: relative;
-    width: 100%;
-    margin: 1.5rem auto;
-}
-
-.search-options {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    justify-content: center;
-}
-
-.search-option {
-    padding: 6px 15px;
-    background: var(--neumorphic-bg);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--black);
-    box-shadow: 4px 4px 8px var(--neumorphic-shadow-dark), 
-                -4px -4px 8px var(--neumorphic-shadow-light);
-    transition: all 0.3s ease;
-}
-
-.search-option.active {
-    background: var(--neumorphic-active-bg);
-    box-shadow: inset 2px 2px 5px var(--neumorphic-inset-dark), 
-                inset -2px -2px 5px var(--neumorphic-inset-light);
-}
-
-.copy-btn {
-    background: var(--neumorphic-bg);
-    border: none;
-    padding: 8px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--black);
-    box-shadow: 4px 4px 8px var(--neumorphic-shadow-dark), 
-                -4px -4px 8px var(--neumorphic-shadow-light);
-    transition: all 0.3s ease;
-}
-
-.copy-btn:hover {
-    background: var(--neumorphic-active-bg);
-    box-shadow: inset 2px 2px 4px var(--neumorphic-inset-dark), 
-                inset -2px -2px 4px var(--neumorphic-inset-light);
-}
-
-.transaction-meta {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: var(--neumorphic-bg);
-    border-radius: 10px;
-    box-shadow: inset 2px 2px 5px var(--neumorphic-inset-dark), 
-                inset -2px -2px 5px var(--neumorphic-inset-light);
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.meta-label {
-    font-weight: bold;
-    color: var(--black);
-    opacity: 0.8;
-}
-
-.meta-value {
-    font-family: monospace;
-    color: var(--black);
-}
-
-.status-confirmed {
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.1);
-    padding: 4px 10px;
-    border-radius: 5px;
-    font-weight: bold;
-}
-
-.address-link {
-    color: #3b82f6;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-.address-link:hover {
-    color: #1d4ed8;
-}
-
-.block-list-container {
+/* Blockchain Container */
+.blockchain-container {
     margin-top: 2rem;
+    background: var(--neumorphic-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 6px 6px 10px var(--neumorphic-shadow-dark), -6px -6px 10px var(--neumorphic-shadow-light);
 }
 
+.blockchain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.blockchain-info {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.blockchain-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.8rem 1.2rem;
+    background: var(--neumorphic-bg);
+    border-radius: 8px;
+    box-shadow: inset 2px 2px 5px var(--neumorphic-inset-dark), inset -2px -2px 5px var(--neumorphic-inset-light);
+}
+
+.blockchain-stat .stat-label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-bottom: 0.3rem;
+}
+
+.blockchain-stat .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: var(--black);
+}
+
+/* Block Items */
 .block-item {
     background: var(--neumorphic-bg);
     border-radius: 10px;
-    padding: 1.2rem;
+    padding: 1rem;
     margin-bottom: 1rem;
-    box-shadow: 6px 6px 10px var(--neumorphic-shadow-dark), 
-                -6px -6px 10px var(--neumorphic-shadow-light);
+    box-shadow: 6px 6px 10px var(--neumorphic-shadow-dark), -6px -6px 10px var(--neumorphic-shadow-light);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .block-item:hover {
     background: var(--neumorphic-active-bg);
-    box-shadow: inset 2px 2px 5px var(--neumorphic-inset-dark), 
-                inset -2px -2px 5px var(--neumorphic-inset-light);
-    transform: translateY(-2px);
+    box-shadow: inset 2px 2px 5px var(--neumorphic-inset-dark), inset -2px -2px 5px var(--neumorphic-inset-light);
 }
 
 .block-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 0.8rem;
 }
 
-.block-number {
+.block-height {
     font-family: 'Orbitron', sans-serif;
-    font-size: 1.2rem;
+    font-weight: bold;
     color: var(--black);
+    font-size: 1.1rem;
 }
 
-.block-hash {
-    font-family: monospace;
-    font-size: 0.9rem;
+.block-timestamp {
     color: var(--black);
     opacity: 0.7;
-    word-break: break-all;
+    font-size: 0.85rem;
 }
 
-.block-info {
+.block-body {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
 }
 
-.block-info-item {
+.block-data-item {
     display: flex;
     flex-direction: column;
 }
 
-.block-info-label {
-    font-size: 0.8rem;
-    color: var(--black);
+.block-data-label {
+    font-size: 0.75rem;
     opacity: 0.7;
-    margin-bottom: 4px;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.block-info-value {
+.block-data-value {
     font-family: monospace;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    word-break: break-all;
     color: var(--black);
 }
 
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--neumorphic-bg);
-    color: var(--black);
-    padding: 12px 24px;
-    border-radius: 10px;
-    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), 
-                -6px -6px 12px var(--neumorphic-shadow-light);
-    transform: translateY(100px);
-    opacity: 0;
-    transition: all 0.3s ease;
-    z-index: 10000;
-}
-
-.toast.show {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.loading-text {
-    margin-top: 15px;
-    color: var(--black);
-    font-size: 0.95rem;
-}
-
-/* New blockchain-specific colors */
-:root {
-    --block-color: #3b82f6;
-    --tx-color: #10b981;
-    --pending-color: #f59e0b;
-    --failed-color: #ef4444;
-}
-
-/* Enhanced transaction items */
-.tx-link {
-    color: var(--tx-color);
+/* Transaction Links */
+.transaction-link {
+    color: #4dabf7;
     text-decoration: none;
     font-family: monospace;
     font-size: 0.85rem;
+    word-break: break-all;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(77, 171, 247, 0.1);
 }
 
-.tx-link:hover {
+.transaction-link:hover {
+    background: rgba(77, 171, 247, 0.2);
     text-decoration: underline;
 }
 
-/* Block explorer specific */
-.block-transaction-item {
-    background: var(--neumorphic-bg);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 8px 0;
+.block-link {
+    color: #20c997;
+    text-decoration: none;
+    font-family: monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-left: 4px solid var(--tx-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(32, 201, 151, 0.1);
 }
 
-.block-transaction-item:hover {
+.block-link:hover {
+    background: rgba(32, 201, 151, 0.2);
+    text-decoration: underline;
+}
+
+/* Copy Button */
+.copy-btn {
+    background: var(--neumorphic-bg);
+    border: none;
+    color: var(--black);
+    padding: 0.3rem 0.6rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    box-shadow: 2px 2px 4px var(--neumorphic-shadow-dark), -2px -2px 4px var(--neumorphic-shadow-light);
+    transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
     background: var(--neumorphic-active-bg);
-    transform: translateX(5px);
+    box-shadow: inset 1px 1px 3px var(--neumorphic-inset-dark), inset -1px -1px 3px var(--neumorphic-inset-light);
+}
+
+.copy-btn:active {
+    transform: scale(0.95);
+}
+
+/* Hash Display */
+.hash-display {
+    font-family: monospace;
+    background: rgba(0,0,0,0.05);
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    word-break: break-all;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Block Miner Info */
+.block-miner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.miner-label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.miner-address {
+    font-family: monospace;
+    color: var(--black);
+    font-size: 0.85rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .blockchain-info {
+        gap: 1rem;
+    }
+    
+    .blockchain-stat {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .block-body {
+        grid-template-columns: 1fr;
+    }
+    
+    .block-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
 }
