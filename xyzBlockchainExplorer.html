@@ -249,7 +249,83 @@
             <div class="pagination" id="pagination"></div>
         </div>
     </div>
+    <!-- Add this section after the existing transaction list -->
+<div class="section-header">BLOCK EXPLORER</div>
+<div class="blockchain-container">
+    <div class="blockchain-header">
+        <div class="blockchain-info">
+            <div class="blockchain-stat">
+                <span class="stat-label">Total Blocks:</span>
+                <span class="stat-value" id="total-blocks">--</span>
+            </div>
+            <div class="blockchain-stat">
+                <span class="stat-label">Block Height:</span>
+                <span class="stat-value" id="block-height">--</span>
+            </div>
+            <div class="blockchain-stat">
+                <span class="stat-label">Difficulty:</span>
+                <span class="stat-value" id="block-difficulty">--</span>
+            </div>
+        </div>
+    </div>
     
+    <div class="blocks-list" id="blocks-list">
+        <!-- Blocks will be loaded here -->
+    </div>
+    
+    <div class="pagination" id="block-pagination">
+        <!-- Block pagination -->
+    </div>
+</div>
+
+<!-- Add to result-container for block details -->
+<div class="result-container" id="block-result">
+    <div class="result-header">
+        <h2>BLOCK DETAILS</h2>
+        <div class="block-hash" id="block-hash-header"></div>
+    </div>
+    <div class="result-body">
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-label">Block Height</div>
+                <div class="data-value" id="block-height-detail">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Block Hash</div>
+                <div class="data-value" id="block-hash-detail">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Previous Hash</div>
+                <div class="data-value" id="prev-hash-detail">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Timestamp</div>
+                <div class="data-value" id="block-timestamp">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Transactions</div>
+                <div class="data-value" id="block-transaction-count">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Merkle Root</div>
+                <div class="data-value" id="merkle-root">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Nonce</div>
+                <div class="data-value" id="block-nonce">--</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Difficulty</div>
+                <div class="data-value" id="block-difficulty-detail">--</div>
+            </div>
+        </div>
+        
+        <h3>Block Transactions</h3>
+        <div class="transaction-list-container" id="block-transactions">
+            <!-- Block transactions will be loaded here -->
+        </div>
+    </div>
+</div>
     <!-- Toast Notification -->
     <div class="toast" id="toast">Copied to clipboard!</div>
     
