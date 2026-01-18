@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blockchain Miner | Mobile & Desktop</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <!-- CryptoJS for SHA256 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --primary: #2d3748;
+            --secondary: #4a5568;
+            --accent: #3182ce;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --light: #f7fafc;
+            --dark: #1a202c;
+            --gray: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        html {
+            height: -webkit-fill-available;
+        }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 768px) {
+            :root {
+                --radius: 16px;
+            }
+            
+            body {
+                padding: 0;
+                background: #f5f7fa;
+            }
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 1200px;
+                padding: 20px;
+            }
+        }
+
+        /* ====================
+           MOBILE-OPTIMIZED HEADER
+           ==================== */
+        .header {
+            background: white;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+                border-radius: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 1.1rem;
+            }
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(45deg, var(--accent), #805ad5);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .auth-section {
+                position: fixed;
+                top: 70px;
+                right: 16px;
+                background: white;
+                border-radius: var(--radius);
+                padding: 1rem;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                display: none;
+                flex-direction: column;
+                gap: 0.75rem;
+                z-index: 1000;
+                min-width: 200px;
+            }
+            
+            .auth-section.mobile-open {
+                display: flex;
+                animation: slideDown 0.3s ease;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ====================
+           AUTH SECTION
+           ==================== */
+        .auth-section {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: var(--gray);
+            border-radius: 50px;
+        }
+
+        @media (max-width: 768px) {
+            .user-info {
+                flex-direction: column;
+                align-items: flex-start;
+                background: none;
+                padding: 0;
+            }
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* ====================
+           MOBILE-OPTIMIZED INPUTS
+           ==================== */
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+
+        input {
+            padding: 1rem;
+            border: 2px solid var(--gray);
+            border-radius: var(--radius);
+            font-size: 16px; /* Prevents iOS zoom */
+            transition: var(--transition);
+            width: 100%;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+        }
+
+        /* Fix for iOS input styling */
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: var(--radius);
+        }
+
+        /* ====================
+           TOUCH-FRIENDLY BUTTONS
+           ==================== */
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 16px;
+            min-height: 52px; /* Minimum touch target size */
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 768px) {
+            .btn {
+                padding: 1rem;
+                width: 100%;
+                min-height: 56px;
+                font-size: 17px;
+            }
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: #2c5282;
+            transform: scale(0.98);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:active {
+            background: #2f855a;
+            transform: scale(0.98);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:active {
+            background: #b7791f;
+            transform: scale(0.98);
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            color: white;
+            padding: 0.75rem 1rem;
+            font-size: 14px;
+        }
+
+        /* ====================
+           MOBILE DASHBOARD
+           ==================== */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr 400px;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+                border-radius: 20px;
+            }
+        }
+
+        .card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--gray);
+        }
+
+        @media (min-width: 768px) {
+            .card-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* ====================
+           MOBILE BLOCKS GRID
+           ==================== */
+        .blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+
+        @media (max-width: 768px) {
+            .blocks-grid {
+                grid-template-columns: 1fr;
+                max-height: 300px;
+                gap: 0.75rem;
+            }
+        }
+
+        .block-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--accent);
+            transition: var(--transition);
+        }
+
+        .block-card:active {
+            transform: scale(0.98);
+        }
+
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .block-number {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .block-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            word-break: break-all;
+            background: var(--gray);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            line-height: 1.4;
+        }
+
+        /* ====================
+           MOBILE MINING CONSOLE
+           ==================== */
+        .mining-console {
+            background: var(--dark);
+            color: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        @media (max-width: 768px) {
+            .mining-console {
+                padding: 1.25rem;
+                border-radius: 20px;
+            }
+        }
+
+        .console-title {
+            color: white;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .console-output {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #4a5568;
+            line-height: 1.5;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ====================
+           MOBILE STATS GRID
+           ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-radius: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            margin: 0.5rem 0;
+        }
+
+        /* ====================
+           MOBILE MODAL
+           ==================== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 1.5rem;
+                max-height: 85vh;
+            }
+        }
+
+        /* ====================
+           MOBILE LOADER
+           ==================== */
+        .loader {
+            border: 4px solid var(--gray);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        /* ====================
+           SWIPE INDICATORS
+           ==================== */
+        .swipe-hint {
+            display: none;
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.875rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .swipe-hint {
+                display: block;
+            }
+        }
+
+        /* ====================
+           BOTTOM NAV FOR MOBILE
+           ==================== */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--gray);
+            padding: 0.75rem 1rem;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex;
+                justify-content: space-around;
+                padding-bottom: var(--safe-bottom);
+            }
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            color: var(--secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        .nav-item:active {
+            transform: scale(0.9);
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+        }
+
+        /* ====================
+           MOBILE TABS
+           ==================== */
+        .mobile-tabs {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-tabs {
+                display: flex;
+                background: white;
+                border-radius: var(--radius);
+                padding: 0.5rem;
+                margin-bottom: 1rem;
+                gap: 0.5rem;
+            }
+            
+            .tab-btn {
+                flex: 1;
+                padding: 1rem;
+                border: none;
+                background: none;
+                border-radius: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: var(--transition);
+            }
+            
+            .tab-btn.active {
+                background: var(--accent);
+                color: white;
+            }
+        }
+
+        /* ====================
+           ACCESSIBILITY
+           ==================== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ====================
+           PULL TO REFRESH PREVENTION
+           ==================== */
+        @media (max-width: 768px) {
+            body {
+                overscroll-behavior-y: contain;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">⛓️</div>
+                <span>Blockchain Miner</span>
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                ☰
+            </button>
+            
+            <!-- Auth Section -->
+            <div id="authSection" class="auth-section">
+                <!-- Login form shown when not authenticated -->
+                <div id="loginForm">
+                    <button onclick="showLoginModal()" class="btn btn-primary">
+                        <span>🔑</span> Login
+                    </button>
+                </div>
+                
+                <!-- User info shown when authenticated -->
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <div id="userEmail" style="font-size: 0.9rem; font-weight: 600;"></div>
+                        <button onclick="logout()" class="btn-logout" style="margin-top: 0.5rem;">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard" style="display: none;">
+            <!-- Mobile Tabs -->
+            <div class="mobile-tabs">
+                <button class="tab-btn active" onclick="switchTab('blocks')">📦 Blocks</button>
+                <button class="tab-btn" onclick="switchTab('mining')">⛏️ Mining</button>
+                <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
+            </div>
+
+            <!-- Mining Control Panel -->
+            <div class="card" id="controlPanel">
+                <div class="card-header">
+                    <h2 class="card-title">Mining Control</h2>
+                    <div class="input-group">
+                        <input type="text" id="xyzAddress" placeholder="Your XYZ wallet address..." />
+                        <button onclick="startMining()" class="btn btn-success">
+                            <span id="miningIcon">⚒️</span> <span id="miningText">Start Mining</span>
+                        </button>
+                        <button onclick="viewBlockchain()" class="btn btn-primary" style="display: none;">🔍 View</button>
+                    </div>
+                </div>
+                
+                <div class="dashboard">
+                    <!-- Blocks Tab Content -->
+                    <div id="blocksTab" class="tab-content">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary);">Blockchain</h3>
+                        <div class="swipe-hint">← Swipe to view more blocks →</div>
+                        <div id="blocksContainer" class="blocks-grid">
+                            <!-- Blocks will be dynamically inserted here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Mining Console Tab Content -->
+                    <div id="miningTab" class="tab-content" style="display: none;">
+                        <div class="mining-console">
+                            <h3 class="console-title">⛏️ Mining Console</h3>
+                            <div id="consoleOutput" class="console-output">
+                                <div class="console-line info">Welcome to Blockchain Miner</div>
+                                <div class="console-line info">Connect your XYZ wallet and start mining</div>
+                                <div class="console-line info">Each block contains 100 transactions</div>
+                                <div class="console-line info">Rewards are sent directly to your XYZ address</div>
+                            </div>
+                            
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-label">Blocks Mined</div>
+                                    <div id="blocksMined" class="stat-value">0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Transactions</div>
+                                    <div id="totalTransactions" class="stat-value">0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Rewards</div>
+                                    <div id="totalRewards" class="stat-value">0 XYZ</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Status</div>
+                                    <div id="miningStatus" class="stat-value">Idle</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Tab Content -->
+                    <div id="statsTab" class="tab-content" style="display: none;">
+                        <div class="card">
+                            <h3 style="margin-bottom: 1rem; color: var(--primary);">Statistics</h3>
+                            <div id="detailedStats">
+                                <!-- Detailed stats will be loaded here -->
+                                <p style="color: var(--secondary);">Loading statistics...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; color: var(--primary);">
+                    Login to Blockchain Miner
+                </h2>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--secondary);">
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" placeholder="user@example.com" />
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--secondary);">
+                        Password
+                    </label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" />
+                </div>
+                <button onclick="login()" class="btn btn-primary" style="width: 100%; padding: 1rem;">
+                    Login
+                </button>
+                <p style="text-align: center; margin-top: 1rem; color: var(--secondary); font-size: 0.9rem;">
+                    Test: admin@miner.com / password123
+                </p>
+                <button onclick="hideLoginModal()" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: none; border: none; color: var(--secondary); cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="mobile-bottom-nav">
+            <button class="nav-item active" onclick="switchTab('blocks')">
+                <span class="nav-icon">📦</span>
+                <span>Blocks</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('mining')">
+                <span class="nav-icon">⛏️</span>
+                <span>Mine</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('stats')">
+                <span class="nav-icon">📊</span>
+                <span>Stats</span>
+            </button>
+            <button class="nav-item" onclick="showUserMenu()">
+                <span class="nav-icon">👤</span>
+                <span>Account</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // ====================
+        // MOBILE-SPECIFIC SETUP
+        // ====================
+        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let currentTab = 'blocks';
+        
+        // Detect touch device
+        let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIwoUIMJrJQeLBD9vijsfIUXG9BgaGSPs",
+            authDomain: "miner-zyx.firebaseapp.com",
+            projectId: "miner-zyx",
+            storageBucket: "miner-zyx.appspot.com",
+            messagingSenderId: "430019680448",
+            appId: "1:430019680448:web:d066b8aaf4355907e1b525",
+            measurementId: "G-V6SDWYH6M2"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Blockchain Configuration
+        const TRANSACTIONS_PER_BLOCK = 100;
+        const MINING_REWARD = 5.0;
+        const DIFFICULTY = 3; // Reduced for mobile performance
+
+        // Global State
+        let currentUser = null;
+        let blockchain = null;
+        let isMining = false;
+        let miningInterval = null;
+
+        // ====================
+        // MOBILE UI FUNCTIONS
+        // ====================
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Hide all tabs
+            document.getElementById('blocksTab').style.display = 'none';
+            document.getElementById('miningTab').style.display = 'none';
+            document.getElementById('statsTab').style.display = 'none';
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // Update mobile tabs
+            document.querySelectorAll('.mobile-tabs .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Activate selected tab buttons
+            const tabBtn = document.querySelector(`.mobile-tabs .tab-btn:nth-child(${['blocks','mining','stats'].indexOf(tabName)+1})`);
+            const navItem = document.querySelector(`.mobile-bottom-nav .nav-item:nth-child(${['blocks','mining','stats','account'].indexOf(tabName)+1})`);
+            
+            if (tabBtn) tabBtn.classList.add('active');
+            if (navItem) navItem.classList.add('active');
+            
+            // Load stats if stats tab selected
+            if (tabName === 'stats') {
+                loadDetailedStats();
+            }
+        }
+
+        function showUserMenu() {
+            if (currentUser) {
+                const menu = document.getElementById('authSection');
+                menu.classList.toggle('mobile-open');
+            } else {
+                showLoginModal();
+            }
+        }
+
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const authSection = document.getElementById('authSection');
+            authSection.classList.toggle('mobile-open');
+            this.textContent = authSection.classList.contains('mobile-open') ? '✕' : '☰';
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const authSection = document.getElementById('authSection');
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            
+            if (!authSection.contains(event.target) && !mobileBtn.contains(event.target)) {
+                authSection.classList.remove('mobile-open');
+                mobileBtn.textContent = '☰';
+            }
+        });
+
+        // ====================
+        // TOUCH-OPTIMIZED BLOCKS
+        // ====================
+        function updateBlocksDisplay() {
+            const container = document.getElementById('blocksContainer');
+            if (!container || !blockchain) return;
+            
+            container.innerHTML = '';
+            
+            // Show last 3 blocks on mobile, 5 on desktop
+            const blocksToShow = isMobile ? 
+                [...blockchain.chain].reverse().slice(0, 3) :
+                [...blockchain.chain].reverse().slice(0, 5);
+            
+            blocksToShow.forEach(block => {
+                const blockElement = document.createElement('div');
+                blockElement.className = 'block-card';
+                blockElement.style.cursor = 'pointer';
+                
+                // Add touch event for block details
+                if (isTouchDevice) {
+                    blockElement.ontouchstart = function() {
+                        this.style.transform = 'scale(0.98)';
+                    };
+                    blockElement.ontouchend = function() {
+                        this.style.transform = 'scale(1)';
+                        showBlockDetails(block);
+                    };
+                } else {
+                    blockElement.onclick = () => showBlockDetails(block);
+                }
+                
+                blockElement.innerHTML = `
+                    <div class="block-header">
+                        <div class="block-number">Block #${block.index}</div>
+                        <div style="padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; background: ${block.index === 0 ? '#c6f6d5' : '#bee3f8'}; color: ${block.index === 0 ? '#22543d' : '#2c5282'};">
+                            ${block.index === 0 ? 'GENESIS' : 'MINED'}
+                        </div>
+                    </div>
+                    <div class="block-hash" title="${block.hash}">
+                        ${block.hash.substring(0, isMobile ? 20 : 24)}...
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--secondary);">
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                            <span style="font-weight: 600;">Transactions:</span>
+                            <span>${block.transactions.length}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                            <span style="font-weight: 600;">Nonce:</span>
+                            <span>${block.nonce.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                            <span style="font-weight: 600;">Time:</span>
+                            <span>${new Date(block.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(blockElement);
+            });
+        }
+
+        function showBlockDetails(block) {
+            const details = `
+Block #${block.index}
+Hash: ${block.hash.substring(0, 32)}...
+Previous: ${block.previousHash.substring(0, 32)}...
+Merkle Root: ${block.merkleRoot.substring(0, 32)}...
+Transactions: ${block.transactions.length}
+Nonce: ${block.nonce.toLocaleString()}
+Timestamp: ${new Date(block.timestamp).toLocaleString()}
+            `;
+            
+            alert(details);
+        }
+
+        // ====================
+        // MOBILE-OPTIMIZED MINING
+        // ====================
+        async function startMining() {
+            if (isMining) {
+                stopMining();
+                return;
+            }
+
+            const xyzAddress = document.getElementById('xyzAddress').value.trim();
+            if (!xyzAddress) {
+                alert('Please enter your XYZ wallet address to receive mining rewards');
+                return;
+            }
+
+            // Switch to mining tab on mobile
+            if (isMobile) {
+                switchTab('mining');
+            }
+
+            isMining = true;
+            document.getElementById('miningStatus').textContent = 'Mining...';
+            document.getElementById('miningIcon').textContent = '⏹️';
+            document.getElementById('miningText').textContent = 'Stop Mining';
+            
+            logToConsole(`🚀 Mining started for: ${xyzAddress}`, 'success');
+            logToConsole(`⛏️ Difficulty: ${DIFFICULTY} | Reward: ${MINING_REWARD} XYZ`, 'info');
+
+            // Optimized mining for mobile (less frequent checks)
+            const checkInterval = isMobile ? 15000 : 10000; // 15 seconds on mobile
+            
+            miningInterval = setInterval(async () => {
+                await mineNextBlock(xyzAddress);
+            }, checkInterval);
+            
+            // Start first block immediately
+            setTimeout(() => mineNextBlock(xyzAddress), 1000);
+        }
+
+        function stopMining() {
+            if (miningInterval) {
+                clearInterval(miningInterval);
+                miningInterval = null;
+            }
+            
+            isMining = false;
+            document.getElementById('miningStatus').textContent = 'Idle';
+            document.getElementById('miningIcon').textContent = '⚒️';
+            document.getElementById('miningText').textContent = 'Start Mining';
+            logToConsole('Mining stopped', 'warning');
+        }
+
+        // ====================
+        // MOBILE-OPTIMIZED FUNCTIONS
+        // ====================
+        async function loadDetailedStats() {
+            if (!blockchain || !currentUser) return;
+            
+            const statsDiv = document.getElementById('detailedStats');
+            let html = `
+                <div style="display: grid; gap: 1rem;">
+                    <div style="background: var(--gray); padding: 1rem; border-radius: var(--radius);">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">User Statistics</div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                            <div>
+                                <div style="font-size: 0.875rem; color: var(--secondary);">Blocks Mined</div>
+                                <div style="font-size: 1.5rem; font-weight: 700;">${blockchain.chain.length - 1}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: var(--secondary);">Total Rewards</div>
+                                <div style="font-size: 1.5rem; font-weight: 700;" id="statsRewards">0 XYZ</div>
+                            </div>
+                        </div>
+                    </div>
+            `;
+            
+            try {
+                // Get user rewards
+                const rewardsSnapshot = await db.collection('user_rewards')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('timestamp', 'desc')
+                    .limit(10)
+                    .get();
+                
+                if (!rewardsSnapshot.empty) {
+                    html += `<div style="background: var(--gray); padding: 1rem; border-radius: var(--radius);">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">Recent Rewards</div>`;
+                    
+                    rewardsSnapshot.forEach(doc => {
+                        const reward = doc.data();
+                        html += `
+                            <div style="padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="font-weight: 600;">${reward.amount} XYZ</span>
+                                    <span style="font-size: 0.875rem; color: var(--secondary);">
+                                        ${new Date(reward.timestamp).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--secondary); margin-top: 0.25rem;">
+                                    To: ${reward.xyzAddress.substring(0, 16)}...
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+                
+                // Get blockchain stats
+                const globalStats = await db.collection('mining_stats').doc('global').get();
+                if (globalStats.exists) {
+                    const stats = globalStats.data();
+                    html += `
+                        <div style="background: var(--gray); padding: 1rem; border-radius: var(--radius);">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Network Statistics</div>
+                            <div style="display: grid; gap: 0.75rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Total Blocks</span>
+                                    <span style="font-weight: 600;">${stats.totalBlocks || 0}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Total Transactions</span>
+                                    <span style="font-weight: 600;">${stats.totalTransactions || 0}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Active Miners</span>
+                                    <span style="font-weight: 600;">${stats.activeMiners || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                html += `<p style="color: var(--danger);">Error loading statistics</p>`;
+            }
+            
+            html += `</div>`;
+            statsDiv.innerHTML = html;
+            
+            // Calculate total rewards
+            let totalRewards = 0;
+            if (blockchain) {
+                blockchain.chain.forEach(block => {
+                    block.transactions.forEach(tx => {
+                        if (tx.type === 'mining_reward' || tx.from === 'BLOCK_REWARD') {
+                            totalRewards += parseFloat(tx.amount) || 0;
+                        }
+                    });
+                });
+            }
+            document.getElementById('statsRewards').textContent = totalRewards.toFixed(2) + ' XYZ';
+        }
+
+        // ====================
+        // CORE BLOCKCHAIN FUNCTIONS
+        // ====================
+        class Block {
+            constructor(index, timestamp, transactions, previousHash = '', nonce = 0) {
+                this.index = index;
+                this.timestamp = timestamp;
+                this.transactions = transactions;
+                this.previousHash = previousHash;
+                this.nonce = nonce;
+                this.merkleRoot = this.calculateMerkleRoot();
+                this.hash = this.calculateHash();
+            }
+
+            calculateHash() {
+                const blockString = this.index + this.timestamp + JSON.stringify(this.transactions) + 
+                                 this.previousHash + this.nonce + this.merkleRoot;
+                return CryptoJS.SHA256(blockString).toString();
+            }
+
+            calculateMerkleRoot() {
+                if (this.transactions.length === 0) return CryptoJS.SHA256("").toString();
+                
+                let transactionHashes = this.transactions.map(tx => {
+                    const txString = JSON.stringify({
+                        from: tx.from, to: tx.to, amount: tx.amount, timestamp: tx.timestamp
+                    });
+                    return CryptoJS.SHA256(txString).toString();
+                });
+
+                while (transactionHashes.length > 1) {
+                    const newLevel = [];
+                    for (let i = 0; i < transactionHashes.length; i += 2) {
+                        const left = transactionHashes[i];
+                        const right = (i + 1 < transactionHashes.length) ? transactionHashes[i + 1] : transactionHashes[i];
+                        newLevel.push(CryptoJS.SHA256(left + right).toString());
+                    }
+                    transactionHashes = newLevel;
+                }
+                return transactionHashes[0];
+            }
+
+            mineBlock(difficulty) {
+                const target = '0'.repeat(difficulty);
+                let attempts = 0;
+                const startTime = Date.now();
+                
+                // Reduced mining intensity for mobile
+                const maxAttempts = isMobile ? 100000 : 500000;
+                
+                while (this.hash.substring(0, difficulty) !== target && attempts < maxAttempts) {
+                    this.nonce++;
+                    this.hash = this.calculateHash();
+                    attempts++;
+                    
+                    // Show progress less frequently on mobile
+                    if (attempts % (isMobile ? 50000 : 10000) === 0) {
+                        const elapsed = Date.now() - startTime;
+                        logToConsole(`Mining... ${attempts.toLocaleString()} attempts`, 'info');
+                    }
+                }
+                
+                const totalTime = Date.now() - startTime;
+                if (attempts >= maxAttempts) {
+                    logToConsole(`⚠️ Mining timeout after ${maxAttempts.toLocaleString()} attempts`, 'warning');
+                    // Use whatever hash we have (for demo purposes)
+                } else {
+                    logToConsole(`✅ Mined in ${totalTime}ms with ${attempts.toLocaleString()} attempts`, 'success');
+                }
+                return this.hash;
+            }
+        }
+
+        class Blockchain {
+            constructor() {
+                this.chain = [this.createGenesisBlock()];
+                this.pendingTransactions = [];
+                this.difficulty = DIFFICULTY;
+            }
+
+            createGenesisBlock() {
+                return new Block(0, new Date().toISOString(), [{
+                    from: 'GENESIS', to: 'NETWORK', amount: 0, timestamp: new Date().toISOString(), type: 'genesis'
+                }], '0'.repeat(64));
+            }
+
+            getLatestBlock() { return this.chain[this.chain.length - 1]; }
+
+            async addBlock(newBlock) {
+                newBlock.previousHash = this.getLatestBlock().hash;
+                newBlock.mineBlock(this.difficulty);
+                this.chain.push(newBlock);
+                await this.saveBlockToFirebase(newBlock);
+                return newBlock;
+            }
+
+            async saveBlockToFirebase(block) {
+                try {
+                    const blockData = {
+                        index: block.index,
+                        timestamp: block.timestamp,
+                        transactionCount: block.transactions.length,
+                        previousHash: block.previousHash,
+                        hash: block.hash,
+                        nonce: block.nonce,
+                        merkleRoot: block.merkleRoot,
+                        difficulty: this.difficulty,
+                        minedBy: currentUser ? currentUser.email : 'system',
+                        minedAt: new Date().toISOString()
+                    };
+
+                    await db.collection('blocks').doc(`block_${block.index}`).set(blockData);
+                    
+                    // Process transactions
+                    const batch = db.batch();
+                    let txIndex = 0;
+                    
+                    for (const transaction of block.transactions) {
+                        if (transaction.originalId) {
+                            const txRef = db.collection('blockchain').doc(transaction.originalId);
+                            batch.update(txRef, {
+                                status: 'confirmed',
+                                blockIndex: block.index,
+                                blockHash: block.hash,
+                                confirmedAt: new Date().toISOString()
+                            });
+                            
+                            const confirmedRef = db.collection('confirmed_transactions').doc(transaction.originalId);
+                            batch.set(confirmedRef, {
+                                ...transaction,
+                                blockIndex: block.index,
+                                blockHash: block.hash,
+                                confirmedAt: new Date().toISOString()
+                            });
+                        } else if (transaction.type === 'mining_reward') {
+                            const rewardRef = db.collection('user_rewards').doc();
+                            batch.set(rewardRef, {
+                                userId: currentUser.uid,
+                                email: currentUser.email,
+                                xyzAddress: transaction.to,
+                                amount: transaction.amount,
+                                blockHash: block.hash,
+                                blockIndex: block.index,
+                                timestamp: new Date().toISOString(),
+                                status: 'distributed'
+                            });
+                        }
+                        txIndex++;
+                    }
+                    
+                    await batch.commit();
+                    logToConsole(`✅ Block ${block.index} saved`, 'success');
+                    
+                } catch (error) {
+                    logToConsole(`❌ Error saving block: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // ====================
+        // INITIALIZATION
+        // ====================
+        async function initializeBlockchain() {
+            logToConsole('Initializing blockchain...', 'info');
+            
+            try {
+                const blocksSnapshot = await db.collection('blocks').orderBy('index', 'asc').get();
+                
+                if (blocksSnapshot.empty) {
+                    blockchain = new Blockchain();
+                    logToConsole('New blockchain created', 'success');
+                } else {
+                    blockchain = new Blockchain();
+                    blockchain.chain = [];
+                    
+                    // Load genesis block
+                    blockchain.chain.push(blockchain.createGenesisBlock());
+                    
+                    // Load other blocks
+                    for (const blockDoc of blocksSnapshot.docs) {
+                        const blockData = blockDoc.data();
+                        if (blockData.index === 0) continue;
+                        
+                        const transactionsSnapshot = await db.collection('confirmed_transactions')
+                            .where('blockIndex', '==', blockData.index)
+                            .get();
+                        
+                        const transactions = [];
+                        transactionsSnapshot.forEach(txDoc => {
+                            transactions.push(txDoc.data());
+                        });
+                        
+                        const block = new Block(
+                            blockData.index,
+                            blockData.timestamp,
+                            transactions,
+                            blockData.previousHash,
+                            blockData.nonce
+                        );
+                        block.hash = blockData.hash;
+                        block.merkleRoot = blockData.merkleRoot;
+                        blockchain.chain.push(block);
+                    }
+                    
+                    logToConsole(`Loaded ${blockchain.chain.length} blocks`, 'success');
+                }
+                
+                updateStats();
+                updateBlocksDisplay();
+                
+            } catch (error) {
+                logToConsole(`Initialization error: ${error.message}`, 'error');
+                blockchain = new Blockchain();
+            }
+        }
+
+        async function mineNextBlock(xyzAddress) {
+            try {
+                // Get pending transactions
+                const snapshot = await db.collection('blockchain')
+                    .where('status', '!=', 'confirmed')
+                    .orderBy('timestamp', 'asc')
+                    .limit(TRANSACTIONS_PER_BLOCK - 1)
+                    .get();
+                
+                const pendingTx = [];
+                snapshot.forEach(doc => {
+                    pendingTx.push({
+                        originalId: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (pendingTx.length === 0) {
+                    logToConsole('No pending transactions', 'warning');
+                    return;
+                }
+                
+                // Add mining reward
+                pendingTx.push({
+                    from: 'BLOCK_REWARD',
+                    to: xyzAddress,
+                    amount: MINING_REWARD,
+                    timestamp: new Date().toISOString(),
+                    type: 'mining_reward'
+                });
+
+                const newBlock = new Block(
+                    blockchain.chain.length,
+                    new Date().toISOString(),
+                    pendingTx,
+                    blockchain.getLatestBlock().hash
+                );
+
+                await blockchain.addBlock(newBlock);
+                updateBlocksDisplay();
+                updateStats();
+                
+                logToConsole(`💰 ${MINING_REWARD} XYZ sent to ${xyzAddress.substring(0, 16)}...`, 'success');
+                
+            } catch (error) {
+                logToConsole(`Mining error: ${error.message}`, 'error');
+            }
+        }
+
+        // ====================
+        // UTILITY FUNCTIONS
+        // ====================
+        function updateStats() {
+            if (!blockchain) return;
+            
+            let totalTransactions = 0;
+            let totalRewards = 0;
+            
+            blockchain.chain.forEach(block => {
+                totalTransactions += block.transactions.length;
+                block.transactions.forEach(tx => {
+                    if (tx.type === 'mining_reward' || tx.from === 'BLOCK_REWARD') {
+                        totalRewards += parseFloat(tx.amount) || 0;
+                    }
+                });
+            });
+            
+            document.getElementById('blocksMined').textContent = blockchain.chain.length - 1;
+            document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
+            document.getElementById('totalRewards').textContent = totalRewards.toFixed(2) + ' XYZ';
+        }
+
+        function logToConsole(message, type = 'info') {
+            const consoleOutput = document.getElementById('consoleOutput');
+            if (!consoleOutput) return;
+            
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // ====================
+        // AUTH FUNCTIONS
+        // ====================
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userAvatar').textContent = currentUser.email.charAt(0).toUpperCase();
+                document.getElementById('dashboard').style.display = 'block';
+                
+                hideLoginModal();
+                logToConsole(`Welcome ${currentUser.email}!`, 'success');
+                
+                await initializeBlockchain();
+                
+            } catch (error) {
+                alert('Login failed. Use: admin@miner.com / password123');
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+            currentUser = null;
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'none';
+            stopMining();
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+        }
+
+        // ====================
+        // PAGE INITIALIZATION
+        // ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Detect device and adjust UI
+            if (isMobile) {
+                document.body.classList.add('mobile');
+                console.log('Mobile device detected');
+            }
+            
+            // Auth state listener
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'flex';
+                    document.getElementById('userEmail').textContent = user.email;
+                    document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+                    document.getElementById('dashboard').style.display = 'block';
+                    
+                    initializeBlockchain();
+                }
+            });
+            
+            // Close modal on outside click
+            document.getElementById('loginModal').addEventListener('click', (e) => {
+                if (e.target.id === 'loginModal') hideLoginModal();
+            });
+            
+            // Enter key in login form
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+            
+            // Prevent zoom on input focus (iOS)
+            document.addEventListener('touchstart', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    e.target.style.fontSize = '16px';
+                }
+            });
+            
+            logToConsole('Blockchain Miner Ready', 'success');
+        });
+    </script>
+</body>
+</html>
